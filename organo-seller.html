@@ -1229,7 +1229,22 @@ button{cursor:pointer;font-family:'DM Sans',sans-serif;}
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<!-- ─── SUPABASE ─── -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="organo-config.js"></script>
+
 <script>
+// ═══════════════════════════════════════════════════════════════
+//  ORGANO SELLER — Supabase-connected seller dashboard
+// ═══════════════════════════════════════════════════════════════
+
+// ─── STATE ───
+let currentUser    = null;
+let currentSeller  = null;
+let sellerProducts = [];
+let sellerOrders   = [];
+let regStep = 0;
+
 // ─── PAGE NAVIGATION ───
 const pageTitles = {
   overview:'Dashboard Overview', products:'My Products',
@@ -1246,9 +1261,13 @@ function showPage(id, navEl) {
   if(navEl) navEl.classList.add('active');
   document.getElementById('topbarTitle').textContent = pageTitles[id]||id;
   window.scrollTo({top:0,behavior:'smooth'});
+  // Lazy-load data when switching pages
+  if (id === 'products')   loadMyProducts();
+  if (id === 'orders')     loadMyOrders();
+  if (id === 'inventory')  loadInventory();
+  if (id === 'earnings')   loadEarnings();
 }
 
-// Fix nav click bindings
 document.querySelectorAll('.nav-item').forEach(item => {
   item.addEventListener('click', function() {
     document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
@@ -1256,34 +1275,293 @@ document.querySelectorAll('.nav-item').forEach(item => {
   });
 });
 
-// ─── REGISTRATION FLOW ───
-let regStep = 0;
+// ─── SELLER INIT ─────────────────────────────────────────────
+async function sellerInit() {
+  try {
+    const user = await Auth.getUser();
+    if (!user) {
+      // Show registration overlay
+      document.getElementById('regOverlay').style.display = 'flex';
+      renderRegStep();
+      return;
+    }
+    currentUser = user;
+    const profile = await Auth.getProfile(user.id);
+
+    // Get or check seller record
+    const { data: seller } = await Sellers.getOwn(user.id);
+    if (!seller) {
+      // Not a seller yet — show registration
+      document.getElementById('regOverlay').style.display = 'flex';
+      renderRegStep();
+      return;
+    }
+    if (seller.status === 'pending') {
+      showToast('⏳ Your seller application is under review. You will be notified shortly.');
+    }
+    currentSeller = seller;
+
+    // Update UI with seller name
+    const title = document.querySelector('.page-title');
+    if (title) title.textContent = `Good morning, ${seller.store_name?.split(' ')[0] || 'Seller'} 👋`;
+    const topbarName = document.querySelector('.sidebar-logo span');
+
+    // Load overview data
+    await Promise.all([loadMyProducts(), loadMyOrders()]);
+    updateOverviewStats();
+
+    // Realtime: notify on new orders
+    if (seller.id) {
+      Realtime.onNewOrder(seller.id, (payload) => {
+        showToast('🛒 New order received!');
+        loadMyOrders();
+        updateOverviewStats();
+      });
+      // Notify on product approval
+      Realtime.onProductApproval(seller.id, (payload) => {
+        if (payload.new.status === 'live') {
+          showToast(`✅ "${payload.new.name}" approved and is now live!`);
+        } else if (payload.new.status === 'rejected') {
+          showToast(`❌ "${payload.new.name}" was rejected by admin.`);
+        }
+        loadMyProducts();
+      });
+    }
+  } catch (err) {
+    console.warn('Seller init error (demo mode):', err.message);
+    document.getElementById('regOverlay').style.display = 'flex';
+    renderRegStep();
+  }
+}
+
+async function loadMyProducts() {
+  if (!currentUser) return;
+  const { data } = await Products.getBySellerUser(currentUser.id);
+  sellerProducts = data || [];
+  const tbody = document.querySelector('#page-products tbody');
+  if (!tbody) return;
+  if (!sellerProducts.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--g500);padding:32px;">No products yet — upload your first product!</td></tr>';
+    return;
+  }
+  const statusMap = { live:'approved', pending:'pending', rejected:'rejected' };
+  tbody.innerHTML = sellerProducts.map(p => `
+    <tr>
+      <td><div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:40px;height:40px;border-radius:8px;background:var(--g100);overflow:hidden;flex-shrink:0;">
+          ${p.image_url ? `<img src="${p.image_url}" style="width:100%;height:100%;object-fit:cover;">` : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:18px;">🌿</div>'}
+        </div>
+        <div><strong style="font-size:13.5px;">${p.name}</strong><div style="font-size:11.5px;color:var(--g500);">${p.unit}</div></div>
+      </div></td>
+      <td>${p.category_slug||'—'}</td>
+      <td>₹${p.seller_price||'—'}</td>
+      <td>${p.admin_price ? '₹'+p.admin_price : '<span style="color:var(--g500);">Pending</span>'}</td>
+      <td>${p.stock_qty||0}</td>
+      <td><span class="status-pill ${statusMap[p.status]||'pending'}">${p.status||'pending'}</span></td>
+      <td>
+        <div style="display:flex;gap:6px;">
+          <button style="padding:5px 12px;border-radius:20px;border:1.5px solid var(--g200);background:transparent;font-size:12px;cursor:pointer;" onclick="editProduct('${p.id}')">Edit</button>
+          <button style="padding:5px 12px;border-radius:20px;border:1.5px solid #FEE2E2;background:#FEE2E2;color:#DC2626;font-size:12px;cursor:pointer;" onclick="deleteProduct('${p.id}')">Delete</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+async function loadMyOrders() {
+  if (!currentUser) return;
+  const { data } = await Orders.getBySeller(currentUser.id);
+  sellerOrders = data || [];
+  const tbody = document.querySelector('#page-orders tbody');
+  if (!tbody) return;
+  const statusMap = { placed:'pending', confirmed:'pending', packed:'active', transit:'active', delivered:'approved', cancelled:'rejected' };
+  tbody.innerHTML = sellerOrders.length
+    ? sellerOrders.map(o => `
+      <tr>
+        <td>#${o.order_number||o.id.slice(0,8).toUpperCase()}</td>
+        <td>${o.profiles?.full_name||'Customer'}</td>
+        <td>${(o.items||[]).map(i=>i.name).join(', ').slice(0,35)||'—'}</td>
+        <td>₹${o.total_amount}</td>
+        <td><span class="status-pill ${statusMap[o.status]||'pending'}">${o.status||'placed'}</span></td>
+        <td>${new Date(o.created_at).toLocaleDateString('en-IN')}</td>
+        <td>
+          <select onchange="updateMyOrderStatus('${o.id}',this.value)" style="font-size:12px;border:1.5px solid var(--g200);border-radius:8px;padding:4px 8px;">
+            <option value="">Update</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="packed">Packed</option>
+            <option value="transit">Dispatched</option>
+            <option value="delivered">Delivered</option>
+          </select>
+        </td>
+      </tr>`).join('')
+    : '<tr><td colspan="7" style="text-align:center;color:var(--g500);padding:32px;">No orders yet</td></tr>';
+}
+
+async function updateMyOrderStatus(orderId, status) {
+  if (!status) return;
+  await Orders.updateStatus(orderId, status);
+  showToast('Order updated to ' + status);
+  loadMyOrders();
+}
+
+async function loadInventory() {
+  if (!sellerProducts.length) await loadMyProducts();
+  const grid = document.querySelector('#page-inventory .inv-grid, #page-inventory table tbody');
+  if (!grid) return;
+  // Update stock inputs if they exist
+  sellerProducts.forEach(p => {
+    const input = document.getElementById('stock-' + p.id);
+    if (input) input.value = p.stock_qty || 0;
+  });
+}
+
+async function updateStock(productId) {
+  const input = document.getElementById('stock-' + productId);
+  if (!input) return;
+  const qty = parseInt(input.value) || 0;
+  await Products.updateStock(productId, qty);
+  showToast('Stock updated to ' + qty + ' units');
+}
+
+function loadEarnings() {
+  if (!sellerOrders.length) return;
+  const delivered = sellerOrders.filter(o => o.status === 'delivered');
+  const revenue   = delivered.reduce((s, o) => s + Number(o.total_amount || 0), 0);
+  const commission = revenue * 0.12; // 12% platform commission
+  const payout    = revenue - commission;
+  // Update earnings stats if elements exist
+  const statNums = document.querySelectorAll('#page-earnings .stat-num, #page-earnings .qstat-num');
+  if (statNums.length >= 3) {
+    statNums[0].textContent = '₹' + revenue.toLocaleString('en-IN');
+    statNums[1].textContent = '₹' + commission.toLocaleString('en-IN');
+    statNums[2].textContent = '₹' + payout.toLocaleString('en-IN');
+  }
+}
+
+function updateOverviewStats() {
+  const delivered = sellerOrders.filter(o => o.status === 'delivered');
+  const revenue   = delivered.reduce((s, o) => s + Number(o.total_amount || 0), 0);
+  const liveProds = sellerProducts.filter(p => p.status === 'live').length;
+  const pending   = sellerProducts.filter(p => p.status === 'pending').length;
+  // Update overview quick stats
+  const statCards = document.querySelectorAll('#page-overview .stat-val, #page-overview .qstat-num');
+  if (statCards.length >= 4) {
+    statCards[0].textContent = '₹' + (revenue / 1000).toFixed(0) + 'K';
+    statCards[1].textContent = sellerOrders.length;
+    statCards[2].textContent = liveProds;
+    statCards[3].textContent = pending + ' pending';
+  }
+}
+
+async function editProduct(productId) {
+  showToast('Opening product editor…');
+  showPage('upload');
+  // Pre-fill form with product data
+  const p = sellerProducts.find(x => x.id === productId);
+  if (!p) return;
+  const nameInput = document.querySelector('#page-upload input[placeholder*="name"], #page-upload input[placeholder*="Name"]');
+  if (nameInput) nameInput.value = p.name;
+  const priceInput = document.querySelector('#page-upload input[type="number"]');
+  if (priceInput) priceInput.value = p.seller_price || '';
+  // Store ID for update
+  document.getElementById('page-upload').dataset.editingId = productId;
+}
+
+async function deleteProduct(productId) {
+  if (!confirm('Delete this product?')) return;
+  await db.from('products').delete().eq('id', productId);
+  showToast('Product deleted');
+  loadMyProducts();
+}
+
+// ─── SUBMIT PRODUCT ──────────────────────────────────────────
+async function submitProduct() {
+  if (!currentUser || !currentSeller) {
+    showToast('⚠️ Sign in as a seller to submit products');
+    return;
+  }
+
+  // Gather form values
+  const uploadPage = document.getElementById('page-upload');
+  const inputs = uploadPage.querySelectorAll('input[type="text"], input[type="number"], textarea, select');
+  const name        = inputs[0]?.value?.trim();
+  const description = uploadPage.querySelector('textarea')?.value?.trim();
+  const category    = uploadPage.querySelector('select')?.value;
+  const price       = parseFloat(uploadPage.querySelector('input[type="number"]')?.value);
+  const unit        = uploadPage.querySelectorAll('input[type="text"]')[1]?.value?.trim() || '1 kg';
+
+  if (!name || !price) {
+    showToast('⚠️ Please fill in product name and price');
+    return;
+  }
+
+  // Handle image upload
+  const fileInput = uploadPage.querySelector('input[type="file"]');
+  let imageUrl = null;
+  if (fileInput?.files?.[0]) {
+    showToast('Uploading image…');
+    const { url } = await Storage.uploadProductImage(fileInput.files[0], currentSeller.id);
+    imageUrl = url;
+  }
+
+  const editingId = uploadPage.dataset.editingId;
+  const productData = {
+    seller_id:    currentSeller.id,
+    name,
+    description,
+    category_slug: category || 'veg',
+    image_url:    imageUrl,
+    unit,
+    seller_price: price,
+    status:       'pending',
+    stock_qty:    100
+  };
+
+  try {
+    if (editingId) {
+      await db.from('products').update(productData).eq('id', editingId);
+      delete uploadPage.dataset.editingId;
+      showToast('✅ Product updated — admin will re-review');
+    } else {
+      const { error } = await Products.create(productData);
+      if (error) throw error;
+      showToast('✅ Product submitted for admin review!');
+    }
+    // Reset form
+    uploadPage.querySelectorAll('input:not([type="checkbox"]), textarea').forEach(el => el.value = '');
+    loadMyProducts();
+  } catch (err) {
+    showToast('⚠️ Error: ' + (err.message || 'Submission failed'));
+  }
+}
+
+// ─── REGISTRATION FLOW ─────────────────────────────────────
 const regStepContent = [
-  `<div class="form-row"><div class="form-group"><label>Store / Farm Name <span class="required">*</span></label><input type="text" placeholder="e.g. Ravi's Organic Farm"></div><div class="form-group"><label>Owner Name <span class="required">*</span></label><input type="text" placeholder="Full legal name"></div></div>
-   <div class="form-row"><div class="form-group"><label>Mobile Number <span class="required">*</span></label><input type="tel" placeholder="+91 98765 43210"></div><div class="form-group"><label>Email Address <span class="required">*</span></label><input type="email" placeholder="store@example.com"></div></div>
-   <div class="form-row full"><div class="form-group"><label>Store Address <span class="required">*</span></label><textarea placeholder="Full address with pincode" style="min-height:70px;"></textarea></div></div>
-   <div class="form-row"><div class="form-group"><label>State</label><select><option>Select state</option><option>Tamil Nadu</option><option>Telangana</option><option>Maharashtra</option><option>Karnataka</option><option>Kerala</option></select></div><div class="form-group"><label>Store Category</label><select><option>Organic Farm</option><option>Organic Shopkeeper</option><option>Dairy Farm</option><option>Herbal Products</option></select></div></div>`,
+  `<div class="form-row"><div class="form-group"><label>Store / Farm Name <span class="required">*</span></label><input type="text" id="reg-storename" placeholder="e.g. Ravi's Organic Farm"></div><div class="form-group"><label>Owner Name <span class="required">*</span></label><input type="text" id="reg-ownername" placeholder="Full legal name"></div></div>
+   <div class="form-row"><div class="form-group"><label>Mobile Number <span class="required">*</span></label><input type="tel" id="reg-phone" placeholder="+91 98765 43210"></div><div class="form-group"><label>Email Address <span class="required">*</span></label><input type="email" id="reg-email" placeholder="store@example.com"></div></div>
+   <div class="form-row"><div class="form-group"><label>Password <span class="required">*</span></label><input type="password" id="reg-password" placeholder="Create a password"></div><div class="form-group"><label>Location / City</label><input type="text" id="reg-location" placeholder="Hyderabad, Telangana"></div></div>
+   <div class="form-row"><div class="form-group"><label>Store Category</label><select id="reg-category"><option value="veg">Organic Farm (Vegetables)</option><option value="fruit">Fruits & Produce</option><option value="dairy">Dairy & Ghee</option><option value="grain">Grains & Millets</option><option value="spice">Spices & Herbs</option><option value="herbal">Herbal Products</option></select></div><div class="form-group"><label>FSSAI Number</label><input type="text" id="reg-fssai" placeholder="14-digit FSSAI license"></div></div>`,
 
   `<p style="font-size:13.5px;color:var(--g500);margin-bottom:20px;">Upload official government-issued documents for verification. All documents are encrypted and securely stored.</p>
-   <div class="form-row"><div class="form-group"><label>GST Certificate <span class="required">*</span></label><div class="doc-upload" onclick="showToast('📄 File picker opened!')"><p>📁 Click to upload GST Certificate</p><span>PDF, JPG up to 5MB</span></div></div><div class="form-group"><label>FSSAI License <span class="required">*</span></label><div class="doc-upload" onclick="showToast('📄 File picker opened!')"><p>📁 Click to upload FSSAI License</p><span>PDF, JPG up to 5MB</span></div></div></div>
-   <div class="form-row"><div class="form-group"><label>Aadhaar / PAN Card <span class="required">*</span></label><div class="doc-upload" onclick="showToast('📄 File picker opened!')"><p>📁 Click to upload ID Proof</p><span>PDF, JPG up to 5MB</span></div></div><div class="form-group"><label>Bank Account Details</label><input type="text" placeholder="Account number for payouts"><div class="form-hint">For receiving weekly payouts</div></div></div>`,
+   <div class="form-row"><div class="form-group"><label>GST Certificate <span class="required">*</span></label><div class="doc-upload" onclick="showToast('📄 File picker — connect storage to enable upload')"><p>📁 Click to upload GST Certificate</p><span>PDF, JPG up to 5MB</span></div></div><div class="form-group"><label>FSSAI License <span class="required">*</span></label><div class="doc-upload" onclick="showToast('📄 File picker — connect storage to enable upload')"><p>📁 Click to upload FSSAI License</p><span>PDF, JPG up to 5MB</span></div></div></div>
+   <div class="form-row"><div class="form-group"><label>Aadhaar / PAN Card <span class="required">*</span></label><div class="doc-upload" onclick="showToast('📄 File picker — connect storage to enable upload')"><p>📁 Click to upload ID Proof</p><span>PDF, JPG up to 5MB</span></div></div><div class="form-group"><label>Bank Account Number</label><input type="text" id="reg-bank" placeholder="Account number for payouts"><div class="form-hint">For receiving weekly payouts</div></div></div>
+   <div class="form-row full"><div class="form-group"><label>IFSC Code</label><input type="text" id="reg-ifsc" placeholder="e.g. SBIN0001234"></div></div>`,
 
   `<p style="font-size:13.5px;color:var(--g500);margin-bottom:20px;">Select all organic certifications your store holds. These will be displayed as trust badges on your store page.</p>
    <div class="check-grid"><div class="check-item"><input type="checkbox" id="rc1" checked><label for="rc1">🌿 India Organic (NPOP)</label></div><div class="check-item"><input type="checkbox" id="rc2"><label for="rc2">🌱 PGS-India Certified</label></div><div class="check-item"><input type="checkbox" id="rc3"><label for="rc3">🇺🇸 USDA Organic</label></div><div class="check-item"><input type="checkbox" id="rc4"><label for="rc4">🌍 EU Organic Certified</label></div><div class="check-item"><input type="checkbox" id="rc5"><label for="rc5">🐄 A2 Dairy Certified</label></div><div class="check-item"><input type="checkbox" id="rc6"><label for="rc6">🌾 Non-GMO Verified</label></div></div>
-   <div class="form-group" style="margin-top:18px;"><label>Upload Organic Certificate Document</label><div class="doc-upload" onclick="showToast('📄 File picker opened!')"><p>📁 Upload Certification PDF / Image</p><span>This will be reviewed by our admin team</span></div></div>`,
+   <div class="form-group" style="margin-top:18px;"><label>Upload Organic Certificate Document</label><div class="doc-upload" onclick="showToast('📄 Connect Supabase Storage to enable upload')"><p>📁 Upload Certification PDF / Image</p><span>This will be reviewed by our admin team</span></div></div>`,
 
   `<div style="background:var(--g-pale);border:1.5px solid var(--g-light);border-radius:var(--r);padding:24px;text-align:center;margin-bottom:20px;">
      <div style="font-size:48px;margin-bottom:12px;">🎉</div>
-     <h3 style="font-size:20px;font-weight:700;margin-bottom:8px;">You're almost there!</h3>
-     <p style="font-size:14px;color:var(--g500);">Your application will be reviewed by our admin team within 24–48 hours. Once approved, your store will go live on Organo.</p>
+     <h3 style="font-size:20px;font-weight:700;margin-bottom:8px;">Almost there!</h3>
+     <p style="font-size:14px;color:var(--g500);">Your application will be reviewed within 24–48 hours. Once approved, your store goes live on Organo.</p>
    </div>
    <div style="background:var(--white);border:1.5px solid var(--g200);border-radius:var(--r);padding:18px;">
      <h5 style="font-size:14px;font-weight:700;margin-bottom:10px;">What happens next?</h5>
      <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--g700);">
        <div>✅ Admin reviews your store details & documents</div>
        <div>✅ Organic certifications are verified</div>
-       <div>✅ You'll receive an email with approval status</div>
-       <div>✅ Once approved, upload your first product!</div>
+       <div>✅ You receive an approval email</div>
+       <div>✅ Upload your first product!</div>
      </div>
    </div>`
 ];
@@ -1299,23 +1577,72 @@ function renderRegStep() {
   document.getElementById('regNextBtn').textContent = regStep===3?'Submit Application 🚀':'Continue →';
 }
 
-function regNext() {
-  if(regStep===3){
-    document.getElementById('regOverlay').style.display='none';
-    showToast('🎉 Application submitted! We will review in 24 hrs.');
+async function regNext() {
+  if (regStep === 3) {
+    await submitRegistration();
     return;
   }
-  regStep=Math.min(3,regStep+1);
+  regStep = Math.min(3, regStep+1);
   renderRegStep();
 }
 function regPrev() {
-  regStep=Math.max(0,regStep-1);
+  regStep = Math.max(0, regStep-1);
   renderRegStep();
 }
 
-// ─── SUBMIT PRODUCT ───
-function submitProduct() {
-  showToast('✅ Product submitted for admin review!');
+async function submitRegistration() {
+  const storeName = document.getElementById('reg-storename')?.value?.trim();
+  const email     = document.getElementById('reg-email')?.value?.trim();
+  const password  = document.getElementById('reg-password')?.value;
+  const phone     = document.getElementById('reg-phone')?.value?.trim();
+  const location  = document.getElementById('reg-location')?.value?.trim();
+  const category  = document.getElementById('reg-category')?.value;
+  const fssai     = document.getElementById('reg-fssai')?.value?.trim();
+  const bank      = document.getElementById('reg-bank')?.value?.trim();
+  const ifsc      = document.getElementById('reg-ifsc')?.value?.trim();
+
+  if (!storeName || !email || !password) {
+    showToast('⚠️ Please fill in store name, email and password');
+    regStep = 0; renderRegStep(); return;
+  }
+
+  const btnEl = document.getElementById('regNextBtn');
+  if (btnEl) { btnEl.textContent = 'Submitting…'; btnEl.disabled = true; }
+
+  try {
+    // 1. Create auth user
+    const { data: authData, error: authError } = await Auth.signUp(email, password, storeName, 'seller');
+    if (authError) throw authError;
+
+    // 2. Create seller record
+    const userId = authData.user?.id;
+    if (userId) {
+      const certs = [];
+      ['rc1','rc2','rc3','rc4','rc5','rc6'].forEach((id, i) => {
+        if (document.getElementById(id)?.checked) {
+          certs.push(['India Organic (NPOP)','PGS-India','USDA Organic','EU Organic','A2 Dairy','Non-GMO'][i]);
+        }
+      });
+      await Sellers.create({
+        user_id:      userId,
+        store_name:   storeName,
+        category,
+        location,
+        fssai_number: fssai,
+        bank_account: bank,
+        ifsc_code:    ifsc,
+        badges:       certs.slice(0,3),
+        certifications: certs,
+        status:       'pending'
+      });
+    }
+
+    document.getElementById('regOverlay').style.display = 'none';
+    showToast('🎉 Application submitted! Review within 24–48 hours.');
+  } catch (err) {
+    showToast('⚠️ ' + (err.message || 'Registration failed'));
+    if (btnEl) { btnEl.disabled = false; renderRegStep(); }
+  }
 }
 
 // ─── TOAST ───
@@ -1330,10 +1657,7 @@ function showToast(msg) {
 
 // ─── INIT ───
 renderRegStep();
-// Auto close registration for demo after visiting page
-setTimeout(()=>{
-  // Keep registration open for demo
-}, 500);
+sellerInit();
 </script>
 </body>
 </html>
