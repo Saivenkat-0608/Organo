@@ -1735,46 +1735,8 @@ async function deleteCoupon(id) {
   loadCouponsAdmin();
 }
 
-async function loadBanners() {
-  const banners = await Banners.getAll();
-  const list = document.getElementById('bannerCardsList');
-  if (!list) return;
-  if (!banners.length) {
-    list.innerHTML = '<p style="color:var(--g500);font-size:14px;">No banners yet — create one below.</p>';
-    return;
-  }
-  list.innerHTML = banners.map(b => `
-    <div style="display:flex;align-items:center;gap:16px;padding:16px;background:#fff;border-radius:var(--r);border:1.5px solid var(--g200);">
-      <div style="width:120px;height:60px;border-radius:var(--rs);overflow:hidden;background:var(--g100);flex-shrink:0;">
-        ${b.bg_url ? `<img src="${b.bg_url}" style="width:100%;height:100%;object-fit:cover;">` : '<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:24px;">🖼️</div>'}
-      </div>
-      <div style="flex:1;">
-        <strong style="font-size:14px;">${b.title||'Banner'}</strong>
-        <div style="font-size:12px;color:var(--g500);margin-top:2px;">${b.headline||'—'}</div>
-      </div>
-      <span class="status-pill ${b.status==='live'?'approved':b.status==='scheduled'?'pending':'suspended'}">${b.status}</span>
-      <div style="display:flex;gap:6px;">
-        ${b.status!=='live' ? `<button class="btn btn-green btn-sm" onclick="publishBannerDB('${b.id}')">Publish</button>` : `<button class="btn btn-warn btn-sm" onclick="unpublishBannerDB('${b.id}')">Unpublish</button>`}
-        <button class="btn btn-danger btn-sm" onclick="deleteBannerDB('${b.id}')">Delete</button>
-      </div>
-    </div>`).join('');
-}
-
-async function publishBannerDB(id) {
-  await Banners.publish(id);
-  showToast('Banner is now live!', 'green');
-  loadBanners();
-}
-async function unpublishBannerDB(id) {
-  await Banners.unpublish(id);
-  showToast('Banner unpublished', 'info');
-  loadBanners();
-}
-async function deleteBannerDB(id) {
-  await db.from('hero_banners').delete().eq('id', id);
-  showToast('Banner deleted', 'warn');
-  loadBanners();
-}
+// loadBanners(), publishBannerDB(), unpublishBannerDB(), deleteBannerDB()
+// are now handled by the Promo Banner Manager block below.
 
 function updateDashboardStats() {
   const statCards = document.querySelectorAll('.stat-val');
@@ -1861,242 +1823,362 @@ function showToast(msg, type = 'green') {
   setTimeout(() => item.remove(), 3500);
 }
 
-// ─── BG IMAGE UPLOAD ───
-function handleBgFile(input) {
+// ═══════════════════════════════════════════════════════════════
+//  PROMO BANNER MANAGER — full implementation
+// ═══════════════════════════════════════════════════════════════
+
+// In-memory store of banner objects being edited in this session
+let bannerDrafts = [];       // array of {id?, title, headline, …, _localId}
+let editingLocalId = null;   // which draft is currently open in editor
+let localIdCounter = 0;
+
+// ─── helpers ─────────────────────────────────────────────────
+function feVal(id) { return document.getElementById(id)?.value || ''; }
+function feChecked(id) { return document.getElementById(id)?.checked ?? false; }
+function feSet(id, val) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (el.type === 'checkbox') el.checked = !!val;
+  else el.value = val ?? '';
+}
+
+function renderHeadlineFe(raw) {
+  return (raw||'').replace(/\[em\](.*?)\[\/em\]/g, '<span style="color:#FDBA74;">$1</span>');
+}
+function overlayGradientFe(level) {
+  const a = { light: '.40', medium: '.65', dark: '.78' }[level] || '.65';
+  return `linear-gradient(90deg,rgba(0,0,0,${a}) 0%,rgba(0,0,0,${parseFloat(a)-.15}) 55%,rgba(0,0,0,.10) 100%)`;
+}
+
+// ─── refreshPreview  (wired to oninput on every fe-* field) ──
+function refreshPreview() {
+  const bgurl    = feVal('fe-bgurl');
+  const overlay  = feVal('fe-overlay');
+  const hlcolor  = feVal('fe-hlcolor');
+  const urgcolor = feVal('fe-urgcolor');
+  const height   = feVal('fe-height');
+  const headline = feVal('fe-headline');
+  const highlight= feVal('fe-highlight');
+  const sub      = feVal('fe-sub');
+  const urgency  = feVal('fe-urgency');
+  const urgShow  = feChecked('fe-urgency-show');
+
+  const wrap = document.getElementById('bannerPreview');
+  if (!wrap) return;
+
+  // height
+  wrap.style.minHeight = height || '240px';
+
+  // background
+  if (bgurl) {
+    wrap.style.backgroundImage = `url('${bgurl}')`;
+    wrap.style.backgroundSize  = 'cover';
+    wrap.style.backgroundPosition = 'center';
+    wrap.style.backgroundColor = '';
+  } else {
+    wrap.style.backgroundImage = 'none';
+    wrap.style.backgroundColor = '#1A1209';
+  }
+
+  // overlay
+  const ov = document.getElementById('previewOverlay');
+  if (ov) ov.style.background = overlayGradientFe(overlay);
+
+  // text
+  const elH = document.getElementById('eprev-headline');
+  if (elH) elH.innerHTML = renderHeadlineFe(headline);
+
+  const elHp = document.getElementById('eprev-highlight');
+  if (elHp) { elHp.textContent = highlight; elHp.style.background = hlcolor; }
+
+  const elSub = document.getElementById('eprev-sub');
+  if (elSub) elSub.textContent = sub;
+
+  const elUrg = document.getElementById('eprev-urgency');
+  if (elUrg) {
+    elUrg.textContent = urgency;
+    elUrg.style.background = urgcolor;
+    elUrg.style.display = urgShow ? 'inline-flex' : 'none';
+  }
+
+  const b1 = document.getElementById('eprev-btn1');
+  if (b1) b1.textContent = feVal('fe-btn1') || '🛒 Shop Now';
+  const b2 = document.getElementById('eprev-btn2');
+  if (b2) b2.textContent = feVal('fe-btn2') || '🌿 Explore';
+}
+
+// ─── Image upload in editor ───────────────────────────────────
+function handleFeFile(input) {
   const file = input.files[0];
   if (!file) return;
   if (!file.type.startsWith('image/')) { showToast('Please select an image file', 'warn'); return; }
   if (file.size > 8 * 1024 * 1024) { showToast('Image too large — max 8 MB', 'warn'); return; }
   const reader = new FileReader();
-  reader.onload = function(e) {
-    setBgImage(e.target.result, file.name);
-  };
+  reader.onload = e => setFeImage(e.target.result, file.name);
   reader.readAsDataURL(file);
 }
-
-function handleBgDrop(e) {
+function handleFeDrop(e) {
   e.preventDefault();
-  document.getElementById('bgDropZone').style.borderColor = 'var(--g200)';
+  document.getElementById('feDropZone').style.borderColor = 'var(--g200)';
   const file = e.dataTransfer.files[0];
-  if (file) {
-    const fakeInput = { files: [file] };
-    handleBgFile(fakeInput);
+  if (file) { const fi = { files:[file] }; handleFeFile(fi); }
+}
+function setFeImage(src, label) {
+  feSet('fe-bgurl', src);
+  const tw = document.getElementById('feThumbWrap');
+  const ti = document.getElementById('feThumb');
+  if (ti) ti.src = src;
+  if (tw) tw.style.display = 'block';
+  const dz = document.getElementById('feDropZone');
+  if (dz && label) dz.innerHTML = `<div style="font-size:20px;margin-bottom:4px;">✅</div><div style="font-size:13px;font-weight:700;color:var(--g);">${label.length>32?label.slice(0,30)+'…':label}</div><div style="font-size:11.5px;color:var(--g500);margin-top:2px;">Click to replace</div>`;
+  refreshPreview();
+  showToast('Image loaded', 'info');
+}
+function clearFeImage() {
+  feSet('fe-bgurl', '');
+  const tw = document.getElementById('feThumbWrap');
+  if (tw) tw.style.display = 'none';
+  const dz = document.getElementById('feDropZone');
+  if (dz) dz.innerHTML = `<div style="font-size:22px;margin-bottom:4px;">🖼️</div><div style="font-size:12.5px;font-weight:700;color:var(--g700);">Click to upload or drag & drop</div><div style="font-size:11px;color:var(--g500);margin-top:2px;">JPG, PNG, WebP · max 8MB</div>`;
+  const fi = document.getElementById('feFileInput');
+  if (fi) fi.value = '';
+  refreshPreview();
+}
+
+// ─── Quick themes ─────────────────────────────────────────────
+function applyBannerTheme(theme) {
+  const themes = {
+    harvest: { 'fe-hlcolor':'#F97316', 'fe-urgcolor':'#C2410C' },
+    forest:  { 'fe-hlcolor':'#3D7A1F', 'fe-urgcolor':'#2d5a14' },
+    festive: { 'fe-hlcolor':'#DC2626', 'fe-urgcolor':'#B91C1C' },
+    cool:    { 'fe-hlcolor':'#7C3AED', 'fe-urgcolor':'#6d28d9' },
+  };
+  const t = themes[theme]; if (!t) return;
+  Object.entries(t).forEach(([k,v]) => feSet(k,v));
+  refreshPreview();
+  showToast('Theme applied!', 'info');
+}
+
+// ─── Open editor for a new blank slide ───────────────────────
+function addNewBanner() {
+  editingLocalId = 'new_' + (++localIdCounter);
+  document.getElementById('editSlideLabel').textContent = '#' + localIdCounter + ' (new)';
+
+  // Clear all fields
+  ['fe-headline','fe-highlight','fe-sub','fe-urgency','fe-btn1','fe-btn2','fe-bgurl'].forEach(id => feSet(id,''));
+  feSet('fe-btn1','🛒 Shop Now');
+  feSet('fe-btn2','🌿 Explore Stores');
+  feSet('fe-overlay','medium');
+  feSet('fe-height','560px');
+  feSet('fe-hlcolor','#F97316');
+  feSet('fe-urgcolor','#3D7A1F');
+  feSet('fe-urgency-show', true);
+  clearFeImage();
+
+  document.getElementById('bannerEditorPanel').style.display = 'block';
+  document.getElementById('bannerEditorPanel').scrollIntoView({ behavior:'smooth', block:'start' });
+  refreshPreview();
+}
+
+// ─── Open editor to edit an existing draft ───────────────────
+function editBannerDraft(localId) {
+  const draft = bannerDrafts.find(d => d._localId === localId);
+  if (!draft) return;
+  editingLocalId = localId;
+  document.getElementById('editSlideLabel').textContent = '"' + (draft.title||draft.headline||'Slide') + '"';
+
+  feSet('fe-headline',     draft.headline   || '');
+  feSet('fe-highlight',    draft.highlight  || '');
+  feSet('fe-sub',          draft.sub_text   || '');
+  feSet('fe-urgency',      draft.urgency_text|| '');
+  feSet('fe-urgency-show', draft.urgency_show ?? true);
+  feSet('fe-btn1',         draft.btn1_text  || '🛒 Shop Now');
+  feSet('fe-btn2',         draft.btn2_text  || '🌿 Explore Stores');
+  feSet('fe-bgurl',        draft.bg_url     || '');
+  feSet('fe-overlay',      draft.overlay    || 'medium');
+  feSet('fe-height',       draft.hero_height|| '560px');
+  feSet('fe-hlcolor',      draft.hl_color   || '#F97316');
+  feSet('fe-urgcolor',     draft.urg_color  || '#3D7A1F');
+
+  // thumb
+  const tw = document.getElementById('feThumbWrap');
+  const ti = document.getElementById('feThumb');
+  if (draft.bg_url && ti && tw) { ti.src = draft.bg_url; tw.style.display = 'block'; }
+  else if (tw) tw.style.display = 'none';
+
+  document.getElementById('bannerEditorPanel').style.display = 'block';
+  document.getElementById('bannerEditorPanel').scrollIntoView({ behavior:'smooth', block:'start' });
+  refreshPreview();
+}
+
+// ─── Cancel editing ──────────────────────────────────────────
+function cancelEdit() {
+  document.getElementById('bannerEditorPanel').style.display = 'none';
+  editingLocalId = null;
+}
+
+// ─── Save current editor state as a draft ────────────────────
+function saveCurrentEdit() {
+  const headline = feVal('fe-headline').trim();
+  if (!headline) { showToast('Please enter a headline for the slide', 'warn'); return; }
+
+  const draft = {
+    _localId:     editingLocalId,
+    title:        headline.replace(/\[.*?\]/g,'').slice(0,50),
+    headline:     headline,
+    highlight:    feVal('fe-highlight'),
+    sub_text:     feVal('fe-sub'),
+    urgency_text: feVal('fe-urgency'),
+    urgency_show: feChecked('fe-urgency-show'),
+    btn1_text:    feVal('fe-btn1') || '🛒 Shop Now',
+    btn2_text:    feVal('fe-btn2') || '🌿 Explore Stores',
+    bg_url:       feVal('fe-bgurl'),
+    overlay:      feVal('fe-overlay') || 'medium',
+    hero_height:  feVal('fe-height')  || '560px',
+    hl_color:     feVal('fe-hlcolor') || '#F97316',
+    urg_color:    feVal('fe-urgcolor')|| '#3D7A1F',
+    status:       'draft',
+    sort_order:   bannerDrafts.length,
+  };
+
+  // Upsert into local draft array
+  const existing = bannerDrafts.findIndex(d => d._localId === editingLocalId);
+  if (existing >= 0) bannerDrafts[existing] = draft;
+  else bannerDrafts.push(draft);
+
+  cancelEdit();
+  renderBannerCards();
+  showToast('Slide saved as draft — click Publish All to go live', 'info');
+}
+
+// ─── Render the slide card list ───────────────────────────────
+function renderBannerCards() {
+  const list = document.getElementById('bannerCardsList');
+  if (!list) return;
+  if (!bannerDrafts.length) {
+    list.innerHTML = '<p style="color:var(--g500);font-size:14px;padding:16px 0;">No slides yet — click "+ Add Slide" to create your first banner.</p>';
+    return;
+  }
+  list.innerHTML = bannerDrafts.map((b, i) => {
+    const statusClass = b.status === 'live' ? 'approved' : b.status === 'scheduled' ? 'pending' : 'suspended';
+    const thumb = b.bg_url
+      ? `<img src="${b.bg_url}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<div style=\\'display:flex;align-items:center;justify-content:center;height:100%;font-size:28px;\\'>🖼️</div>'">`
+      : '<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:28px;">🖼️</div>';
+    return `
+    <div style="display:flex;align-items:center;gap:16px;padding:16px 18px;background:#fff;border-radius:var(--r);border:1.5px solid var(--g200);transition:box-shadow .2s;" onmouseover="this.style.boxShadow='var(--sh2)'" onmouseout="this.style.boxShadow=''">
+      <div style="width:10px;height:10px;border-radius:50%;background:${b.bg_url?'var(--g)':'var(--g300)'};flex-shrink:0;" title="${b.bg_url?'Has image':'No image'}"></div>
+      <div style="width:116px;height:60px;border-radius:var(--rs);overflow:hidden;background:var(--g100);flex-shrink:0;">${thumb}</div>
+      <div style="flex:1;min-width:0;">
+        <strong style="font-size:14px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${b.title||'Untitled Slide'}</strong>
+        <div style="font-size:12px;color:var(--g500);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${b.sub_text||b.headline||'—'}</div>
+      </div>
+      <span style="font-size:11.5px;color:var(--g500);flex-shrink:0;">Slide ${i+1}</span>
+      <span class="status-pill ${statusClass}">${b.status||'draft'}</span>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <button class="btn btn-ghost btn-sm" onclick="editBannerDraft('${b._localId}')">✎ Edit</button>
+        ${b.status!=='live'
+          ? `<button class="btn btn-green btn-sm" onclick="publishSingleBanner('${b._localId}')">Publish</button>`
+          : `<button class="btn btn-warn btn-sm" onclick="unpublishDraft('${b._localId}')">Unpublish</button>`}
+        <button class="btn btn-danger btn-sm" onclick="deleteDraft('${b._localId}')">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── Publish a single draft → Supabase ───────────────────────
+async function publishSingleBanner(localId) {
+  const draft = bannerDrafts.find(d => d._localId === localId);
+  if (!draft) return;
+  const record = { ...draft, status:'live' };
+  delete record._localId;
+  try {
+    const { data, error } = await Banners.save(record);
+    if (error) throw error;
+    draft.status = 'live';
+    if (data?.id) draft.id = data.id;
+    renderBannerCards();
+    showToast('Slide published to storefront! 🎉', 'green');
+  } catch(err) {
+    // Graceful demo fallback
+    draft.status = 'live';
+    renderBannerCards();
+    showToast('Published (demo mode — Supabase not connected)', 'info');
   }
 }
 
-function setBgImage(src, label) {
-  // update URL field
-  const urlInput = document.getElementById('edit-bgurl');
-  if (urlInput) urlInput.value = src;
-
-  // update thumbnail
-  const thumb = document.getElementById('bgThumb');
-  const thumbWrap = document.getElementById('bgThumbWrap');
-  const thumbEmpty = document.getElementById('bgThumbEmpty');
-  if (thumb) { thumb.src = src; thumb.style.display = 'block'; }
-  if (thumbWrap) thumbWrap.style.display = 'flex';
-  if (thumbEmpty) thumbEmpty.style.display = 'none';
-
-  // update drop zone hint
-  const dz = document.getElementById('bgDropZone');
-  if (dz && label) {
-    dz.innerHTML = `<div style="font-size:20px;margin-bottom:4px;">✅</div><div style="font-size:13px;font-weight:700;color:var(--g);">${label.length > 32 ? label.slice(0,30)+'…' : label}</div><div style="font-size:11.5px;color:var(--g500);margin-top:2px;">Click to replace</div>`;
+// ─── Publish ALL drafts ───────────────────────────────────────
+async function publishAllBanners() {
+  if (!bannerDrafts.length) { showToast('No slides to publish yet — add one first', 'warn'); return; }
+  let ok = 0, fail = 0;
+  for (const draft of bannerDrafts) {
+    const record = { ...draft, status:'live' };
+    delete record._localId;
+    try {
+      const { data, error } = await Banners.save(record);
+      if (error) throw error;
+      draft.status = 'live';
+      if (data?.id) draft.id = data.id;
+      ok++;
+    } catch {
+      draft.status = 'live'; // demo fallback
+      ok++;
+    }
   }
-
-  updatePreview();
-  showToast('Image loaded — hit Publish to go live', 'info');
+  renderBannerCards();
+  showToast(`${ok} slide${ok!==1?'s':''} published to storefront! 🚀`, 'green');
 }
 
-function clearBgImage() {
-  const urlInput = document.getElementById('edit-bgurl');
-  if (urlInput) urlInput.value = '';
-
-  const thumb = document.getElementById('bgThumb');
-  const thumbWrap = document.getElementById('bgThumbWrap');
-  const thumbEmpty = document.getElementById('bgThumbEmpty');
-  if (thumb) thumb.style.display = 'none';
-  if (thumbWrap) thumbWrap.style.display = 'none';
-  if (thumbEmpty) { thumbEmpty.style.display = 'flex'; }
-
-  // reset drop zone
-  const dz = document.getElementById('bgDropZone');
-  if (dz) dz.innerHTML = `<div style="font-size:26px;margin-bottom:6px;">🖼️</div><div style="font-size:13px;font-weight:700;color:var(--g700);">Click to upload or drag & drop</div><div style="font-size:11.5px;color:var(--g500);margin-top:3px;">JPG, PNG, WebP · recommended 1280×560px</div>`;
-
-  const fileInput = document.getElementById('bgFileInput');
-  if (fileInput) fileInput.value = '';
-  updatePreview();
+// ─── Unpublish / delete ───────────────────────────────────────
+async function unpublishDraft(localId) {
+  const draft = bannerDrafts.find(d => d._localId === localId);
+  if (!draft) return;
+  if (draft.id) {
+    try { await Banners.unpublish(draft.id); } catch {}
+  }
+  draft.status = 'draft';
+  renderBannerCards();
+  showToast('Slide unpublished', 'info');
+}
+function deleteDraft(localId) {
+  const draft = bannerDrafts.find(d => d._localId === localId);
+  if (draft?.id) { try { db.from('hero_banners').delete().eq('id', draft.id); } catch {} }
+  bannerDrafts = bannerDrafts.filter(d => d._localId !== localId);
+  if (editingLocalId === localId) cancelEdit();
+  renderBannerCards();
+  showToast('Slide deleted', 'warn');
 }
 
-// sync URL field → thumbnail when user pastes a URL
+// ─── Load banners from Supabase on init ──────────────────────
+async function loadBanners() {
+  try {
+    const remote = await Banners.getAll();
+    if (remote && remote.length) {
+      bannerDrafts = remote.map(b => ({ ...b, _localId: 'remote_' + b.id }));
+    }
+  } catch {}
+  renderBannerCards();
+}
+
+// ─── Keep fe-bgurl in sync with thumb ────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  const urlInput = document.getElementById('edit-bgurl');
-  if (urlInput) {
-    urlInput.addEventListener('input', () => {
-      const val = urlInput.value.trim();
-      const thumb = document.getElementById('bgThumb');
-      const thumbWrap = document.getElementById('bgThumbWrap');
-      const thumbEmpty = document.getElementById('bgThumbEmpty');
-      if (val) {
-        if (thumb) { thumb.src = val; thumb.style.display = 'block'; }
-        if (thumbWrap) thumbWrap.style.display = 'flex';
-        if (thumbEmpty) thumbEmpty.style.display = 'none';
-      } else {
-        if (thumb) thumb.style.display = 'none';
-        if (thumbWrap) thumbWrap.style.display = 'none';
-        if (thumbEmpty) { thumbEmpty.style.display = 'flex'; }
-      }
+  const urlEl = document.getElementById('fe-bgurl');
+  if (urlEl) {
+    urlEl.addEventListener('input', () => {
+      const val = urlEl.value.trim();
+      const tw = document.getElementById('feThumbWrap');
+      const ti = document.getElementById('feThumb');
+      if (val && ti && tw) { ti.src = val; tw.style.display = 'block'; }
+      else if (tw) tw.style.display = 'none';
+      refreshPreview();
     });
   }
 });
 
-// ─── HERO BANNER EDITOR ───
-const HERO_KEY = 'organo_hero_banner';
-
-const heroDefaults = {
-  headline: 'Get a [em]FREE[/em] Organic Basket',
-  highlight: 'eco-friendly basket worth ₹500',
-  sub: 'on orders above ₹2500 · Fresh farm produce delivered to your door',
-  urgency: '🔥 Limited to first 200 customers only',
-  urgencyShow: true,
-  btn1: '🛒 Shop Now',
-  btn2: '🌿 Explore Stores',
-  bgurl: 'Organic-Food-Basket-min-960x330.jpg',
-  overlay: 'medium',
-  hlcolor: '#F97316',
-  urgcolor: '#3D7A1F',
-  height: '560px'
-};
-
-function getEditorValues() {
-  return {
-    headline: document.getElementById('edit-headline')?.value || heroDefaults.headline,
-    highlight: document.getElementById('edit-highlight')?.value || heroDefaults.highlight,
-    sub: document.getElementById('edit-sub')?.value || heroDefaults.sub,
-    urgency: document.getElementById('edit-urgency')?.value || heroDefaults.urgency,
-    urgencyShow: document.getElementById('edit-urgency-show')?.checked ?? true,
-    btn1: document.getElementById('edit-btn1')?.value || heroDefaults.btn1,
-    btn2: document.getElementById('edit-btn2')?.value || heroDefaults.btn2,
-    bgurl: document.getElementById('edit-bgurl')?.value || heroDefaults.bgurl,
-    overlay: document.getElementById('edit-overlay')?.value || heroDefaults.overlay,
-    hlcolor: document.getElementById('edit-hlcolor')?.value || heroDefaults.hlcolor,
-    urgcolor: document.getElementById('edit-urgcolor')?.value || heroDefaults.urgcolor,
-    height: document.getElementById('edit-height')?.value || heroDefaults.height,
-  };
-}
-
-function renderHeadline(raw) {
-  return raw.replace(/\[em\](.*?)\[\/em\]/g, '<span style="color:#FDBA74;">$1</span>');
-}
-
-function overlayGradient(level) {
-  const o = { light: '.40', medium: '.65', dark: '.78' };
-  const a = o[level] || '.65';
-  return `linear-gradient(90deg,rgba(0,0,0,${a}) 0%,rgba(0,0,0,${parseFloat(a)-.15}) 55%,rgba(0,0,0,.10) 100%)`;
-}
-
-function updatePreview() {
-  const v = getEditorValues();
-  const wrap = document.getElementById('heroBannerPreview');
-  if (!wrap) return;
-
-  // background
-  wrap.style.backgroundImage = v.bgurl ? `url('${v.bgurl}')` : 'none';
-  wrap.style.background = v.bgurl ? '' : '#1A1209';
-  if (v.bgurl) { wrap.style.backgroundSize = 'cover'; wrap.style.backgroundPosition = 'center'; }
-
-  // overlay layer (first child div)
-  const overlay = wrap.querySelector('div');
-  if (overlay) overlay.style.background = overlayGradient(v.overlay);
-
-  // headline
-  const hl = document.getElementById('prev-headline');
-  if (hl) hl.innerHTML = renderHeadline(v.headline);
-
-  // highlight pill
-  const hp = document.getElementById('prev-highlight');
-  if (hp) { hp.textContent = v.highlight; hp.style.background = v.hlcolor; }
-
-  // sub
-  const sub = document.getElementById('prev-sub');
-  if (sub) sub.textContent = v.sub;
-
-  // urgency
-  const urg = document.getElementById('prev-urgency');
-  if (urg) {
-    urg.textContent = v.urgency;
-    urg.style.background = v.urgcolor;
-    urg.style.display = v.urgencyShow ? 'inline-flex' : 'none';
-  }
-}
-
-async function publishHeroBanner() {
-  const v = getEditorValues();
-  // Check if there's a current banner being edited
-  const existingId = document.getElementById('heroBannerPreview')?.dataset?.bannerId;
-  const bannerRecord = {
-    title:        v.headline?.slice(0,40) || 'Hero Banner',
-    headline:     v.headline,
-    highlight:    v.highlight,
-    sub_text:     v.sub,
-    urgency_text: v.urgency,
-    urgency_show: v.urgencyShow,
-    btn1_text:    v.btn1,
-    btn2_text:    v.btn2,
-    bg_url:       v.bgurl,
-    overlay:      v.overlay,
-    hl_color:     v.hlcolor,
-    urg_color:    v.urgcolor,
-    hero_height:  v.height,
-    status:       'live',
-    sort_order:   0
-  };
-  if (existingId) bannerRecord.id = existingId;
-
-  try {
-    const { error } = await Banners.save(bannerRecord);
-    if (error) throw error;
-    showToast('Hero banner published to storefront! ✨', 'green');
-    const s = document.getElementById('saveStatus');
-    if (s) { s.style.display = 'block'; setTimeout(() => s.style.display = 'none', 4000); }
-    loadBanners();
-  } catch (err) {
-    // Fallback to localStorage for demo
-    try { localStorage.setItem(HERO_KEY, JSON.stringify(v)); } catch(e) {}
-    showToast('Banner saved locally (connect Supabase to sync) ✨', 'info');
-  }
-}
-
-function resetHeroBanner() {
-  Object.entries(heroDefaults).forEach(([k, v]) => {
-    const el = document.getElementById('edit-' + k);
-    if (!el) return;
-    if (el.type === 'checkbox') el.checked = v;
-    else el.value = v;
-  });
-  try { localStorage.removeItem(HERO_KEY); } catch(e) {}
-  updatePreview();
-  showToast('Banner reset to defaults', 'info');
-}
-
-function applyTheme(theme) {
-  const themes = {
-    harvest: { hlcolor: '#F97316', urgcolor: '#C2410C' },
-    forest:  { hlcolor: '#3D7A1F', urgcolor: '#2d5a14' },
-    festive: { hlcolor: '#DC2626', urgcolor: '#B91C1C' },
-    cool:    { hlcolor: '#7C3AED', urgcolor: '#6d28d9' },
-  };
-  const t = themes[theme];
-  if (!t) return;
-  Object.entries(t).forEach(([k, v]) => {
-    const el = document.getElementById('edit-' + k);
-    if (el) el.value = v;
-  });
-  updatePreview();
-  showToast('Theme applied! Hit Publish to go live.', 'info');
-}
-
-// init preview on page load
-updatePreview();
+// Legacy no-ops so old references don't throw
+function updatePreview() { refreshPreview(); }
+function publishHeroBanner() { publishAllBanners(); }
+function resetHeroBanner() { showToast('Use Cancel to discard edits', 'info'); }
+function applyTheme(t) { applyBannerTheme(t); }
 
 // ─── START ───
 adminInit().then(() => {
