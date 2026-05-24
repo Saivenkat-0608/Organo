@@ -1068,8 +1068,12 @@ table td[style*="font-weight"]{font-family:'Playfair Display',serif !important;f
             </label>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <div class="form-row" style="margin:0;"><label>Primary Button</label><input type="text" id="fe-btn1" oninput="refreshPreview()"></div>
-            <div class="form-row" style="margin:0;"><label>Secondary Button</label><input type="text" id="fe-btn2" oninput="refreshPreview()"></div>
+            <div class="form-row" style="margin:0;"><label>Primary Button Label</label><input type="text" id="fe-btn1" oninput="refreshPreview()" placeholder="🛒 Shop Now"></div>
+            <div class="form-row" style="margin:0;"><label>Secondary Button Label</label><input type="text" id="fe-btn2" oninput="refreshPreview()" placeholder="🌿 Explore Stores"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+            <div class="form-row" style="margin:0;"><label>Primary Button Link</label><input type="text" id="fe-btn1-link" placeholder="browse  or  https://…"><div style="font-size:11px;color:var(--g500);margin-top:3px;">Internal page id <em>or</em> full URL</div></div>
+            <div class="form-row" style="margin:0;"><label>Secondary Button Link</label><input type="text" id="fe-btn2-link" placeholder="stores  or  https://…"></div>
           </div>
         </div>
         <!-- RIGHT -->
@@ -1965,7 +1969,7 @@ function addNewBanner() {
   document.getElementById('editSlideLabel').textContent = '#' + localIdCounter + ' (new)';
 
   // Clear all fields
-  ['fe-headline','fe-highlight','fe-sub','fe-urgency','fe-btn1','fe-btn2','fe-bgurl'].forEach(id => feSet(id,''));
+  ['fe-headline','fe-highlight','fe-sub','fe-urgency','fe-btn1','fe-btn2','fe-btn1-link','fe-btn2-link','fe-bgurl'].forEach(id => feSet(id,''));
   feSet('fe-btn1','🛒 Shop Now');
   feSet('fe-btn2','🌿 Explore Stores');
   feSet('fe-overlay','medium');
@@ -1994,6 +1998,8 @@ function editBannerDraft(localId) {
   feSet('fe-urgency-show', draft.urgency_show ?? true);
   feSet('fe-btn1',         draft.btn1_text  || '🛒 Shop Now');
   feSet('fe-btn2',         draft.btn2_text  || '🌿 Explore Stores');
+  feSet('fe-btn1-link',    draft.btn1_link  || '');
+  feSet('fe-btn2-link',    draft.btn2_link  || '');
   feSet('fe-bgurl',        draft.bg_url     || '');
   feSet('fe-overlay',      draft.overlay    || 'medium');
   feSet('fe-height',       draft.hero_height|| '560px');
@@ -2032,6 +2038,8 @@ function saveCurrentEdit() {
     urgency_show: feChecked('fe-urgency-show'),
     btn1_text:    feVal('fe-btn1') || '🛒 Shop Now',
     btn2_text:    feVal('fe-btn2') || '🌿 Explore Stores',
+    btn1_link:    feVal('fe-btn1-link'),
+    btn2_link:    feVal('fe-btn2-link'),
     bg_url:       feVal('fe-bgurl'),
     overlay:      feVal('fe-overlay') || 'medium',
     hero_height:  feVal('fe-height')  || '560px',
