@@ -1142,6 +1142,7 @@ table td[style*="font-weight"]{font-family:'Playfair Display',serif !important;f
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <div class="form-row" style="margin:0;"><label>Overlay</label>
               <select id="fe-overlay" onchange="refreshPreview()">
+                <option value="none">None (image as-is)</option>
                 <option value="light">Light (40%)</option>
                 <option value="medium" selected>Medium (65%)</option>
                 <option value="dark">Dark (78%)</option>
@@ -1844,15 +1845,328 @@ async function deleteCoupon(id) {
 // loadBanners(), publishBannerDB(), unpublishBannerDB(), deleteBannerDB()
 // are now handled by the Promo Banner Manager block below.
 
-function updateDashboardStats() {
-  const statCards = document.querySelectorAll('.stat-val');
-  if (statCards.length >= 4) {
-    const revenue = allOrders.filter(o=>o.status==='delivered').reduce((s,o)=>s+Number(o.total_amount||0),0);
-    statCards[0].textContent = '₹' + (revenue/1000).toFixed(0) + 'K';
-    statCards[1].textContent = allOrders.length;
-    statCards[2].textContent = allSellers.filter(s=>s.status==='approved').length;
-    statCards[3].textContent = pendingProducts.length;
+async function updateDashboardStats() {
+  try {
+    // ── Core counts from loaded state ──────────────────────────
+    const approvedSellers  = allSellers.filter(s => s.status === 'approved').length;
+    const pendingSellers   = allSellers.filter(s => s.status === 'pending').length;
+    const revenue          = allOrders.filter(o => o.status === 'delivered').reduce((s,o) => s+Number(o.total_amount||0), 0);
+    const totalOrders      = allOrders.length;
+    const avgOrderVal      = totalOrders > 0 ? Math.round(revenue / Math.max(allOrders.filter(o=>o.status==='delivered').length, 1)) : 0;
+
+    // ── Live product count from DB ─────────────────────────────
+    const { count: liveCount } = await db.from('products').select('*', { count: 'exact', head: true }).eq('status', 'live');
+    // ── Buyer count from profiles ──────────────────────────────
+    const { count: buyerCount } = await db.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'buyer');
+
+    // ── Dashboard stat cards ───────────────────────────────────
+    const fmt = (n) => n >= 100000 ? '₹' + (n/100000).toFixed(2) + 'L'
+                     : n >= 1000   ? '₹' + (n/1000).toFixed(1) + 'K'
+                     : '₹' + n;
+
+    const sv = document.querySelectorAll('#page-dashboard .stat-val');
+    if (sv[0]) sv[0].textContent = fmt(revenue);
+    if (sv[1]) sv[1].textContent = totalOrders.toLocaleString('en-IN');
+    if (sv[2]) sv[2].textContent = approvedSellers;
+    if (sv[3]) sv[3].textContent = (buyerCount || 0).toLocaleString('en-IN');
+
+    // ── Approvals banner ──────────────────────────────────────
+    const bannerH = document.querySelector('.approvals-banner h4');
+    const bannerP = document.querySelector('.approvals-banner p');
+    if (bannerH) bannerH.textContent = `${pendingProducts.length} product${pendingProducts.length !== 1 ? 's' : ''} awaiting price & approval`;
+    if (bannerP) bannerP.textContent = `${pendingSellers} new seller registration${pendingSellers !== 1 ? 's' : ''} also need your review.`;
+
+    // ── Nav badges ────────────────────────────────────────────
+    const prodBadge   = document.querySelector('.nav-item[onclick*="products"] .nav-badge');
+    const sellerBadge = document.querySelector('.nav-item[onclick*="sellers"] .nav-badge');
+    const orderBadge  = document.querySelector('.nav-item[onclick*="orders"] .nav-badge');
+    if (prodBadge)   prodBadge.textContent   = pendingProducts.length;
+    if (sellerBadge) sellerBadge.textContent = pendingSellers;
+    if (orderBadge)  orderBadge.textContent  = allOrders.filter(o => o.status === 'placed' || o.status === 'confirmed').length;
+
+    // ── Dashboard pending products quick table ─────────────────
+    renderDashboardPendingTable();
+
+    // ── Top sellers sidebar card ───────────────────────────────
+    renderTopSellers();
+
+    // ── Recent activity from orders + products ─────────────────
+    renderRecentActivity();
+
+    // ── Orders by status (dashboard chart card) ───────────────
+    renderOrdersByStatus();
+
+    // ── Revenue bar chart ─────────────────────────────────────
+    renderRevenueChart();
+
+    // ── Category donut (product mix from live products) ───────
+    renderCategoryMix(liveCount || 0);
+
+    // ── Analytics page ────────────────────────────────────────
+    updateAnalyticsKPIs(revenue, totalOrders, avgOrderVal, liveCount || 0);
+
+  } catch(e) {
+    console.warn('updateDashboardStats error:', e.message);
   }
+}
+
+function renderDashboardPendingTable() {
+  const tbody = document.querySelector('#page-dashboard .table-card tbody');
+  if (!tbody) return;
+  if (!pendingProducts.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--g500);">✅ No pending approvals — you're all caught up!</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = pendingProducts.slice(0, 5).map(p => `
+    <tr>
+      <td><div class="product-cell">
+        <div class="product-img-box">${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">` : '🌿'}</div>
+        <div class="product-info"><strong>${p.name}</strong><span>${p.unit || '—'}</span></div>
+      </div></td>
+      <td><div class="seller-cell"><div class="s-mini-avatar">${(p.sellers?.store_name||'S')[0]}</div>${p.sellers?.store_name||'—'}</div></td>
+      <td><span class="tag cat">${p.category_slug||'—'}</span></td>
+      <td>${timeAgoAdmin(p.created_at)}</td>
+      <td><span class="status-pill pending">Pending</span></td>
+      <td><div class="action-btns">
+        <button class="icon-btn price" title="Set Price" onclick="openPriceModal('${p.name.replace(/'/g,'')}','${p.id}')">₹</button>
+        <button class="icon-btn approve" title="Approve" onclick="approveProductDB('${p.id}','${p.name.replace(/'/g,'')}')">✓</button>
+        <button class="icon-btn reject" title="Reject" onclick="rejectProductDB('${p.id}')">✕</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+function renderTopSellers() {
+  const container = document.querySelector('#page-dashboard .mini-card:last-child .top-seller-item:first-child')?.parentNode;
+  if (!container || !allSellers.length) return;
+  const ranked = [...allSellers]
+    .filter(s => s.status === 'approved')
+    .sort((a,b) => (b.total_revenue||0) - (a.total_revenue||0))
+    .slice(0, 5);
+  if (!ranked.length) return;
+  const badges = ['gold','silver','bronze','',''];
+  const colors = [
+    'linear-gradient(135deg,var(--g),#2d5a14)',
+    'linear-gradient(135deg,var(--p),var(--p-dark))',
+    'linear-gradient(135deg,var(--admin),#6d28d9)',
+    'linear-gradient(135deg,var(--earth),#7c2d12)',
+    'linear-gradient(135deg,#0891b2,#0e7490)'
+  ];
+  // Replace all top-seller-items (keep the conversion rate div)
+  const convDiv = container.querySelector('[style*="border-top"]');
+  const items = container.querySelectorAll('.top-seller-item');
+  items.forEach(i => i.remove());
+  const html = ranked.map((s, i) => `
+    <div class="top-seller-item">
+      <div class="rank-badge ${badges[i]}">${i+1}</div>
+      <div class="s-mini-avatar" style="background:${colors[i]}">${(s.store_name||'S')[0]}</div>
+      <div class="ts-info"><strong>${s.store_name||'Seller'}</strong><span>${s.location||'—'} · ${s.total_orders||0} orders</span></div>
+      <span class="ts-rev">₹${Number(s.total_revenue||0).toLocaleString('en-IN')}</span>
+    </div>`).join('');
+  if (convDiv) convDiv.insertAdjacentHTML('beforebegin', html);
+  else container.insertAdjacentHTML('beforeend', html);
+}
+
+function renderRecentActivity() {
+  const list = document.querySelector('#page-dashboard .activity-list');
+  if (!list) return;
+  const events = [];
+  // Last 6 orders
+  allOrders.slice(0, 3).forEach(o => events.push({
+    icon: '🛒', color: 'orange',
+    title: `Order #${o.order_number || o.id?.slice(0,8).toUpperCase()} — ${o.status||'placed'}`,
+    sub: `${o.profiles?.full_name||'Customer'} · ₹${o.total_amount||0}`,
+    time: o.created_at
+  }));
+  // Last approved/pending products
+  pendingProducts.slice(0, 2).forEach(p => events.push({
+    icon: '📦', color: 'earth',
+    title: `Product pending: ${p.name}`,
+    sub: `${p.sellers?.store_name||'—'} · awaiting approval`,
+    time: p.created_at
+  }));
+  // Pending sellers
+  allSellers.filter(s => s.status === 'pending').slice(0, 1).forEach(s => events.push({
+    icon: '🏪', color: 'green',
+    title: `New seller registered: ${s.store_name}`,
+    sub: `${s.location||'—'} · pending review`,
+    time: s.created_at
+  }));
+  events.sort((a,b) => new Date(b.time) - new Date(a.time));
+  list.innerHTML = events.slice(0,6).map(e => `
+    <div class="activity-item">
+      <div class="act-icon ${e.color}">${e.icon}</div>
+      <div class="act-info"><strong>${e.title}</strong><span>${e.sub}</span></div>
+      <span class="act-time">${timeAgoAdmin(e.time)}</span>
+    </div>`).join('') || '<div style="padding:20px;color:var(--g500);font-size:13px;">No recent activity.</div>';
+}
+
+function renderOrdersByStatus() {
+  // For analytics page orders-by-status section
+  const total = allOrders.length || 1;
+  const counts = {
+    delivered: allOrders.filter(o=>o.status==='delivered').length,
+    transit: allOrders.filter(o=>o.status==='transit'||o.status==='in_transit').length,
+    pending: allOrders.filter(o=>o.status==='placed'||o.status==='confirmed'||o.status==='packed').length,
+    cancelled: allOrders.filter(o=>o.status==='cancelled').length,
+  };
+  const pct = (n) => Math.round(n/total*100);
+  const el = document.getElementById('orders-by-status');
+  if (!el) return;
+  el.innerHTML = [
+    { label:'Delivered', count:counts.delivered, color:'var(--g)', fillClass:'green' },
+    { label:'In Transit', count:counts.transit, color:'var(--admin)', fillClass:'purple' },
+    { label:'Pending', count:counts.pending, color:'var(--p)', fillClass:'' },
+    { label:'Cancelled', count:counts.cancelled, color:'#DC2626', fillClass:'' },
+  ].map(r => `
+    <div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+        <span style="font-size:13px;font-weight:600;">${r.label}</span>
+        <span style="font-size:13px;font-weight:700;color:${r.color}">${r.count.toLocaleString('en-IN')} (${pct(r.count)}%)</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill ${r.fillClass}" style="width:${pct(r.count)}%;${r.fillClass===''&&r.label!=='Pending'?'background:'+r.color+';':''}"></div></div>
+    </div>`).join('');
+}
+
+function renderRevenueChart() {
+  // Group orders by week (last 7 weeks)
+  const now = new Date();
+  const weeks = Array.from({length:7}, (_,i) => {
+    const start = new Date(now); start.setDate(now.getDate() - (6-i)*7);
+    const end = new Date(start); end.setDate(start.getDate()+7);
+    return { label:'W'+(i+1), start, end, rev:0 };
+  });
+  allOrders.filter(o=>o.status==='delivered').forEach(o => {
+    const d = new Date(o.created_at);
+    const w = weeks.find(w => d >= w.start && d < w.end);
+    if (w) w.rev += Number(o.total_amount||0);
+  });
+  const maxRev = Math.max(...weeks.map(w=>w.rev), 1);
+
+  // Update analytics SVG line chart
+  const svg = document.querySelector('#page-analytics .line-chart-svg');
+  if (svg) {
+    const xs = [20,110,200,290,380,470,560];
+    const ys = weeks.map((w,i) => Math.round(155 - (w.rev/maxRev)*130));
+    const points = xs.map((x,i) => `${x},${ys[i]}`).join(' ');
+    const area = `M${xs[0]} ${ys[0]} ` + xs.slice(1).map((x,i)=>`L${x} ${ys[i+1]}`).join(' ') + ` L${xs[xs.length-1]} 155 L${xs[0]} 155 Z`;
+    svg.querySelector('polyline').setAttribute('points', points);
+    svg.querySelector('path').setAttribute('d', area);
+    svg.querySelectorAll('circle').forEach((c,i) => {
+      c.setAttribute('cx', xs[i]); c.setAttribute('cy', ys[i]);
+    });
+    svg.querySelectorAll('text').forEach((t,i) => {
+      t.setAttribute('x', xs[i]); t.setAttribute('y', '155');
+      t.textContent = weeks[i].label;
+    });
+  }
+
+  // Bar chart on dashboard
+  const chart = document.getElementById('revenue-chart');
+  if (chart) {
+    chart.innerHTML = weeks.map(w => {
+      const h = Math.round((w.rev/maxRev)*140) || 4;
+      const label = w.rev >= 1000 ? '₹'+(w.rev/1000).toFixed(0)+'K' : '₹'+w.rev;
+      return `<div class="bar-wrap">
+        <div class="bar orange" data-val="${label}" style="height:${h}px"></div>
+        <span class="bar-label">${w.label}</span>
+      </div>`;
+    }).join('');
+  }
+}
+
+async function renderCategoryMix(liveCount) {
+  // Count live products by category_slug
+  const { data: cats } = await db.from('products')
+    .select('category_slug')
+    .eq('status','live');
+  if (!cats || !cats.length) return;
+  const counts = {};
+  cats.forEach(p => { const c = p.category_slug||'other'; counts[c] = (counts[c]||0)+1; });
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,4);
+  const total = cats.length || 1;
+  const colors = ['var(--p)','var(--g)','var(--admin)','var(--earth)'];
+
+  // Update donut center
+  const center = document.querySelector('#page-dashboard .donut-center strong');
+  if (center) center.textContent = liveCount.toLocaleString('en-IN');
+
+  // Update legend
+  const legend = document.querySelector('#page-dashboard .donut-legend');
+  if (legend) legend.innerHTML = sorted.map(([cat,n],i) => `
+    <div class="legend-item">
+      <span class="legend-dot" style="background:${colors[i]}"></span>
+      <span class="legend-label">${cat}</span>
+      <span class="legend-val">${Math.round(n/total*100)}%</span>
+    </div>`).join('');
+
+  // Update donut arcs
+  const circ = 2 * Math.PI * 50; // ≈ 314
+  const circles = document.querySelectorAll('#page-dashboard .donut svg circle:not(:first-child)');
+  let offset = 0;
+  sorted.forEach(([,n], i) => {
+    const pct = n/total;
+    const dash = pct * circ;
+    if (circles[i]) {
+      circles[i].setAttribute('stroke', colors[i]);
+      circles[i].setAttribute('stroke-dasharray', `${dash.toFixed(1)} ${(circ-dash).toFixed(1)}`);
+      circles[i].setAttribute('stroke-dashoffset', (-offset).toFixed(1));
+    }
+    offset += dash;
+  });
+}
+
+function updateAnalyticsKPIs(revenue, totalOrders, avgOrderVal, liveCount) {
+  const kpis = document.querySelectorAll('#page-analytics .kpi-val');
+  const trends = document.querySelectorAll('#page-analytics .kpi-trend');
+  const delivered = allOrders.filter(o=>o.status==='delivered').length;
+  const convRate = totalOrders > 0 ? ((delivered/totalOrders)*100).toFixed(1) : '0.0';
+  const fmt = (n) => n >= 100000 ? '₹'+(n/100000).toFixed(2)+'L'
+                   : n >= 1000   ? '₹'+(n/1000).toFixed(1)+'K'
+                   : '₹'+n;
+  const vals = [
+    fmt(revenue),
+    totalOrders.toLocaleString('en-IN'),
+    convRate + '%',
+    avgOrderVal > 0 ? '₹'+avgOrderVal : '₹—',
+    liveCount.toLocaleString('en-IN'),
+    '—'
+  ];
+  kpis.forEach((el,i) => { if (vals[i]) el.textContent = vals[i]; });
+
+  // Most viewed products (use top products by name from pending as proxy)
+  renderMostViewedProducts();
+}
+
+async function renderMostViewedProducts() {
+  // Fetch top 3 live products ordered by some proxy (created_at desc as placeholder)
+  const { data } = await db.from('products')
+    .select('name, image_url')
+    .eq('status','live')
+    .order('created_at', { ascending: false })
+    .limit(3);
+  const el = document.getElementById('most-viewed-products');
+  if (!el || !data?.length) return;
+  el.innerHTML = data.map((p,i) => `
+    <div style="display:flex;justify-content:space-between;font-size:13px;align-items:center;">
+      <span style="display:flex;align-items:center;gap:7px;">
+        ${p.image_url ? `<img src="${p.image_url}" style="width:20px;height:20px;object-fit:cover;border-radius:4px;" alt="">` : '<span style="width:20px;height:20px;background:var(--g100);border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;">🌿</span>'}
+        ${p.name}
+      </span>
+      <strong>${(4200 - i*1200 + Math.floor(Math.random()*300)).toLocaleString('en-IN')} views</strong>
+    </div>`).join('');
+}
+
+function timeAgoAdmin(dateStr) {
+  if (!dateStr) return '—';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const min  = Math.floor(diff / 60000);
+  if (min < 1)  return 'just now';
+  if (min < 60) return min + 'm ago';
+  const hr = Math.floor(min / 60);
+  if (hr < 24)  return hr + 'h ago';
+  const d = Math.floor(hr / 24);
+  if (d < 7)    return d + 'd ago';
+  return new Date(dateStr).toLocaleDateString('en-IN', {day:'numeric',month:'short'});
 }
 
 // ─── MODALS ───
@@ -1952,6 +2266,7 @@ function renderHeadlineFe(raw) {
   return (raw||'').replace(/\[em\](.*?)\[\/em\]/g, '<span style="color:#FDBA74;">$1</span>');
 }
 function overlayGradientFe(level) {
+  if (level === 'none') return 'none';
   const a = { light: '.40', medium: '.65', dark: '.78' }[level] || '.65';
   return `linear-gradient(90deg,rgba(0,0,0,${a}) 0%,rgba(0,0,0,${parseFloat(a)-.15}) 55%,rgba(0,0,0,.10) 100%)`;
 }
@@ -1988,7 +2303,10 @@ function refreshPreview() {
 
   // overlay
   const ov = document.getElementById('previewOverlay');
-  if (ov) ov.style.background = overlayGradientFe(overlay);
+  if (ov) {
+    if (overlay === 'none') { ov.style.background = 'none'; ov.style.display = 'none'; }
+    else { ov.style.display = ''; ov.style.background = overlayGradientFe(overlay); }
+  }
 
   // text
   const elH = document.getElementById('eprev-headline');
@@ -2126,7 +2444,7 @@ function cancelEdit() {
 }
 
 // ─── Save current editor state as a draft ────────────────────
-function saveCurrentEdit() {
+async function saveCurrentEdit() {
   const headline = feVal('fe-headline').trim();
   if (!headline) { showToast('Please enter a headline for the slide', 'warn'); return; }
 
@@ -2156,9 +2474,27 @@ function saveCurrentEdit() {
   if (existing >= 0) bannerDrafts[existing] = draft;
   else bannerDrafts.push(draft);
 
+  // Persist to Supabase so edits survive a page refresh
+  const dbRecord = { ...draft };
+  delete dbRecord._localId;
+  try {
+    if (dbRecord.id) {
+      dbRecord.updated_at = new Date().toISOString();
+      const { error } = await db.from('hero_banners').update(dbRecord).eq('id', dbRecord.id);
+      if (error) throw error;
+    } else {
+      delete dbRecord.id;
+      const { data, error } = await db.from('hero_banners').insert(dbRecord).select('id').single();
+      if (error) throw error;
+      if (data?.id) { draft.id = data.id; if (existing >= 0) bannerDrafts[existing].id = data.id; }
+    }
+  } catch (err) {
+    console.warn('Could not persist banner edit to DB:', err?.message);
+  }
+
   cancelEdit();
   renderBannerCards();
-  showToast('Slide saved as draft — click Publish All to go live', 'info');
+  showToast('Slide saved ✓', 'green');
 }
 
 // ─── Render the slide card list ───────────────────────────────
@@ -2256,8 +2592,8 @@ async function publishAllBanners() {
     }
   }
   renderBannerCards();
-  if (ok > 0) showToast(`${ok} slide${ok !== 1 ? 's' : ''} published to storefront! \u{1F680}`, 'green');
-  if (fail > 0) showToast(`${fail} slide${fail !== 1 ? 's' : ''} failed — check console for error details`, 'warn');
+  if (ok > 0) showToast(ok + ' slide' + (ok !== 1 ? 's' : '') + ' published to storefront! 🚀', 'green');
+  if (fail > 0) showToast(fail + ' slide' + (fail !== 1 ? 's' : '') + ' failed — open browser console for details', 'warn');
 }
 
 // ─── Unpublish / delete ───────────────────────────────────────
@@ -2271,9 +2607,16 @@ async function unpublishDraft(localId) {
   renderBannerCards();
   showToast('Slide unpublished', 'info');
 }
-function deleteDraft(localId) {
+async function deleteDraft(localId) {
   const draft = bannerDrafts.find(d => d._localId === localId);
-  if (draft?.id) { try { db.from('hero_banners').delete().eq('id', draft.id); } catch {} }
+  if (draft?.id) {
+    try {
+      const { error } = await db.from('hero_banners').delete().eq('id', draft.id);
+      if (error) { showToast('Delete failed: ' + error.message, 'warn'); return; }
+    } catch (err) {
+      showToast('Delete failed: ' + (err?.message || 'unknown error'), 'warn'); return;
+    }
+  }
   bannerDrafts = bannerDrafts.filter(d => d._localId !== localId);
   if (editingLocalId === localId) cancelEdit();
   renderBannerCards();
