@@ -156,18 +156,22 @@ section{padding:80px 48px;max-width:1280px;margin:0 auto;}
 .tag-label{display:inline-block;background:var(--p-pale);color:var(--p);font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:4px 12px;border-radius:40px;margin-bottom:12px;}
 
 /* ─── CATEGORIES ─── */
-.cat-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:14px;}
+.cat-groups{display:flex;flex-direction:column;gap:36px;}
+.cat-group-label{font-size:13px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.cat-group-label::after{content:'';flex:1;height:1px;background:var(--g200);}
+.cat-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:20px;}
+.cat-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;}
 .cat-card{
-  display:flex;flex-direction:column;align-items:center;gap:10px;
-  padding:20px 10px;border-radius:var(--r);cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  padding:36px 16px;border-radius:var(--r);cursor:pointer;
   background:var(--white);border:1.5px solid var(--g200);
   transition:all .25s;
 }
 .cat-card:hover{border-color:var(--p-light);background:var(--p-pale);transform:translateY(-3px);box-shadow:var(--sh);}
 .cat-card.active{border-color:var(--p);background:var(--p-pale);}
-.cat-icon{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;overflow:hidden;}
+.cat-icon{width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:48px;overflow:hidden;}
 .cat-icon img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;}
-.cat-name{font-size:12px;font-weight:600;color:var(--g700);text-align:center;}
+.cat-name{font-size:14px;font-weight:600;color:var(--g700);text-align:center;line-height:1.35;}
 
 /* ─── PRODUCT GRID ─── */
 .product-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;}
@@ -391,7 +395,7 @@ section{padding:80px 48px;max-width:1280px;margin:0 auto;}
 .review-author p{font-size:11.5px;color:var(--g500);}
 
 /* ─── AUTH MODAL ─── */
-.auth-modal{background:var(--white);border-radius:var(--rl);width:100%;max-width:440px;position:relative;}
+.auth-modal{background:var(--white);border-radius:var(--rl);width:100%;max-width:440px;}
 .auth-header{padding:32px 32px 24px;text-align:center;}
 .auth-header .logo{display:block;margin-bottom:16px;font-size:30px;}
 .auth-header h3{font-size:22px;margin-bottom:6px;}
@@ -541,44 +545,128 @@ footer{background:var(--g900);color:#fff;padding:64px 48px 32px;}
     <section style="padding-top:60px;">
       <div class="tag-label">Browse by Type</div>
       <div class="sec-head"><h2>Shop by <span>Category</span></h2><a href="#" onclick="showPage('browse')">View all categories →</a></div>
-      <div class="cat-grid" id="catGrid">
-        <div class="cat-card active" onclick="filterCat('all',this)">
-          <div class="cat-icon" style="background:#FFF7ED;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628980/Organo/100-percent-organic-product-premium-green-circle-icon-design-with-beauty-leaf-silhouette-vector_567423-1478_lxfayu.avif" alt="All Items"></div>
-          <span class="cat-name">All Items</span>
+      <div class="cat-groups" id="catGrid">
+
+        <!-- 1. Fresh Items -->
+        <div>
+          <div class="cat-group-label">🥬 Fresh Items</div>
+          <div class="cat-grid-4">
+            <div class="cat-card" onclick="browseCategory('veg',this)">
+              <div class="cat-icon" style="background:#F0FDF4;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628423/Organo/pngtree-3d-fruit-and-vegetable-theme-background-png-image_15967877_qzrhax.png" alt="Vegetables"></div>
+              <span class="cat-name">Fresh Vegetables</span>
+            </div>
+            <div class="cat-card" onclick="browseCategory('fruit',this)">
+              <div class="cat-icon" style="background:#FFF7ED;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628422/Organo/Frutta-e-verdura-felicita_iraeqf.jpg" alt="Fruits"></div>
+              <span class="cat-name">Fresh Fruits</span>
+            </div>
+            <div class="cat-card" onclick="browseCategory('dairy',this)">
+              <div class="cat-icon" style="background:#FEF9C3;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628421/Organo/Icon_6-01_stvtzl.jpg" alt="Dairy"></div>
+              <span class="cat-name">Dairy, Bread &amp; Eggs</span>
+            </div>
+            <div class="cat-card" onclick="browseCategory('meat',this)">
+              <div class="cat-icon" style="background:#FFF1F2;">🐟</div>
+              <span class="cat-name">Meat &amp; Seafood</span>
+            </div>
+          </div>
         </div>
-        <div class="cat-card" onclick="filterCat('veg',this)">
-          <div class="cat-icon" style="background:#F0FDF4;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628423/Organo/pngtree-3d-fruit-and-vegetable-theme-background-png-image_15967877_qzrhax.png" alt="Vegetables"></div>
-          <span class="cat-name">Vegetables</span>
+
+        <!-- 2. Grocery & Kitchen -->
+        <div>
+          <div class="cat-group-label">🧺 Grocery &amp; Kitchen</div>
+          <div class="cat-grid-4">
+            <div class="cat-card" onclick="browseCategory('grain',this)">
+              <div class="cat-icon" style="background:#FEF3C7;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628420/Organo/aaedu7wjw_ng2enp.webp" alt="Grains"></div>
+              <span class="cat-name">Atta, Rice &amp; Dal</span>
+            </div>
+            <div class="cat-card" onclick="browseCategory('spice',this)">
+              <div class="cat-icon" style="background:#FFF0F3;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628421/Organo/herbs-and-spices-clipart-transparent-khada-garam-masala-11563284983a71c5ngmsx_vob3or.png" alt="Masalas"></div>
+              <span class="cat-name">Masalas &amp; Spices</span>
+            </div>
+            <div class="cat-card" onclick="browseCategory('oil',this)">
+              <div class="cat-icon" style="background:#FFFBEB;">🫙</div>
+              <span class="cat-name">Oils &amp; Ghee</span>
+            </div>
+            <div class="cat-card" onclick="browseCategory('millet',this)">
+              <div class="cat-icon" style="background:#F0FDF4;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628420/Organo/png-clipart-millet-platter-whole-grains-disc-bumper-thumbnail_opewmb.png" alt="Millets"></div>
+              <span class="cat-name">Millets &amp; Cereals</span>
+            </div>
+          </div>
         </div>
-        <div class="cat-card" onclick="filterCat('fruit',this)">
-          <div class="cat-icon" style="background:#FFF7ED;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628422/Organo/Frutta-e-verdura-felicita_iraeqf.jpg" alt="Fruits"></div>
-          <span class="cat-name">Fruits</span>
+
+        <!-- 3. Snacks & Drinks -->
+        <div>
+          <div class="cat-group-label">🍿 Snacks &amp; Drinks</div>
+          <div class="cat-grid-4">
+            <div class="cat-card" onclick="browseCategory('seeds',this)">
+              <div class="cat-icon" style="background:#F0FDF4;">🌻</div>
+              <span class="cat-name">Seeds &amp; Nuts</span>
+            </div>
+            <div class="cat-card" onclick="browseCategory('biscuits',this)">
+              <div class="cat-icon" style="background:#FEF3C7;">🍪</div>
+              <span class="cat-name">Biscuits &amp; Cakes</span>
+            </div>
+            <div class="cat-card" onclick="browseCategory('sauces',this)">
+              <div class="cat-icon" style="background:#FFF7ED;">🥫</div>
+              <span class="cat-name">Sauces &amp; Spreads</span>
+            </div>
+            <div class="cat-card" onclick="browseCategory('chips',this)">
+              <div class="cat-icon" style="background:#FFF1F2;">🥨</div>
+              <span class="cat-name">Chips &amp; Namkeen</span>
+            </div>
+          </div>
         </div>
-        <div class="cat-card" onclick="filterCat('dairy',this)">
-          <div class="cat-icon" style="background:#FEF9C3;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628421/Organo/Icon_6-01_stvtzl.jpg" alt="Dairy"></div>
-          <span class="cat-name">Dairy</span>
+
+        <!-- 4. Beauty & Wellness -->
+        <div>
+          <div class="cat-group-label">✨ Beauty &amp; Wellness</div>
+          <div class="cat-grid-4">
+            <div class="cat-card" onclick="browseCategory('bath',this)">
+              <div class="cat-icon" style="background:#F0F9FF;">🛁</div>
+              <span class="cat-name">Bath &amp; Body</span>
+            </div>
+            <div class="cat-card" onclick="browseCategory('haircare',this)">
+              <div class="cat-icon" style="background:#FDF4FF;">💆</div>
+              <span class="cat-name">Hair Care</span>
+            </div>
+            <div class="cat-card" onclick="browseCategory('skincare',this)">
+              <div class="cat-icon" style="background:#FFF7ED;">🌸</div>
+              <span class="cat-name">Skin Care</span>
+            </div>
+            <div class="cat-card" onclick="browseCategory('herbal',this)">
+              <div class="cat-icon" style="background:#F5F3FF;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628419/Organo/pngtree-nature-herbal-logo-png-image_6005680_bskipo.png" alt="Herbal"></div>
+              <span class="cat-name">Health &amp; Pharma</span>
+            </div>
+          </div>
         </div>
-        <div class="cat-card" onclick="filterCat('grain',this)">
-          <div class="cat-icon" style="background:#FEF3C7;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628420/Organo/aaedu7wjw_ng2enp.webp" alt="Organic Rice"></div>
-          <span class="cat-name">Organic Rice</span>
+
+        <!-- 5. Baby Care -->
+        <div>
+          <div class="cat-group-label">🍼 Baby Care</div>
+          <div class="cat-grid-4">
+            <div class="cat-card" onclick="browseCategory('babyshampoo',this)">
+              <div class="cat-icon" style="background:#F0F9FF;">🧴</div>
+              <span class="cat-name">Baby Shampoos</span>
+            </div>
+            <div class="cat-card" onclick="browseCategory('babyskin',this)">
+              <div class="cat-icon" style="background:#FDF4FF;">🌿</div>
+              <span class="cat-name">Baby Skin Care</span>
+            </div>
+            <div class="cat-card" onclick="browseCategory('babysoap',this)">
+              <div class="cat-icon" style="background:#F0FDF4;">🫧</div>
+              <span class="cat-name">Baby Soaps</span>
+            </div>
+            <div class="cat-card" onclick="browseCategory('babyfood',this)">
+              <div class="cat-icon" style="background:#FEF3C7;">🥣</div>
+              <span class="cat-name">Baby Food</span>
+            </div>
+          </div>
         </div>
-        <div class="cat-card" onclick="filterCat('spice',this)">
-          <div class="cat-icon" style="background:#FFF0F3;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628421/Organo/herbs-and-spices-clipart-transparent-khada-garam-masala-11563284983a71c5ngmsx_vob3or.png" alt="Spices"></div>
-          <span class="cat-name">Spices</span>
-        </div>
-        <div class="cat-card" onclick="filterCat('millet',this)">
-          <div class="cat-icon" style="background:#F0FDF4;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628420/Organo/png-clipart-millet-platter-whole-grains-disc-bumper-thumbnail_opewmb.png" alt="Millets"></div>
-          <span class="cat-name">Millets</span>
-        </div>
-        <div class="cat-card" onclick="filterCat('herbal',this)">
-          <div class="cat-icon" style="background:#F5F3FF;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628419/Organo/pngtree-nature-herbal-logo-png-image_6005680_bskipo.png" alt="Herbal"></div>
-          <span class="cat-name">Herbal</span>
-        </div>
+
       </div>
     </section>
 
-    <!-- FEATURED PRODUCTS -->
-    <section>
+    <!-- FEATURED PRODUCTS (hidden — products shown in browse page per category) -->
+    <section style="display:none;">
       <div class="tag-label">Editor's Pick</div>
       <div class="sec-head"><h2>Featured <span>Products</span></h2><a href="#" onclick="showPage('browse')">Browse all →</a></div>
       <div class="product-grid" id="featuredGrid"></div>
@@ -929,9 +1017,6 @@ footer{background:var(--g900);color:#fff;padding:64px 48px 32px;}
 <!-- AUTH MODAL -->
 <div class="modal-overlay" id="authModal">
   <div class="auth-modal">
-    <button onclick="document.getElementById('authModal').classList.remove('open')" style="position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:50%;border:1.5px solid var(--g200);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--p)'" onmouseout="this.style.borderColor='var(--g200)'">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
     <div class="auth-header">
       <span class="logo serif">Organ<span style="color:var(--g);">o</span></span>
       <h3 id="authTitle">Welcome Back</h3>
@@ -1452,13 +1537,15 @@ function makeStoreCard(s) {
   </div>`;
 }
 
-function renderAll() {
+function renderAll(skipBrowse = false) {
   // Featured (first 8)
   const fg = document.getElementById('featuredGrid');
   if(fg) fg.innerHTML = products.slice(0,8).map(p=>makeProductCard(p)).join('');
-  // Browse
-  const bg = document.getElementById('browseGrid');
-  if(bg) bg.innerHTML = products.map(p=>makeProductCard(p)).join('');
+  // Browse — skip if a category filter is about to be applied
+  if (!skipBrowse) {
+    const bg = document.getElementById('browseGrid');
+    if(bg) bg.innerHTML = products.map(p=>makeProductCard(p)).join('');
+  }
   // Nearby stores (first 4)
   const nsg = document.getElementById('nearbyStoresGrid');
   if(nsg) nsg.innerHTML = stores.slice(0,4).map(s=>makeStoreCard(s)).join('');
@@ -1564,21 +1651,53 @@ async function toggleWish(id, btn) {
 }
 
 // ─── FILTERS ───
-function filterCat(cat, el) {
-  document.querySelectorAll('#catGrid .cat-card').forEach(c=>c.classList.remove('active'));
+// Called from homepage category cards — navigates to browse page with filter applied
+function browseCategory(cat, el) {
+  document.querySelectorAll('#catGrid .cat-card').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
-  const fg = document.getElementById('featuredGrid');
-  const filtered = cat==='all' ? products.slice(0,8) : products.filter(p=>p.cat===cat).slice(0,8);
-  fg.innerHTML = filtered.length ? filtered.map(p=>makeProductCard(p)).join('') : '<p style="color:var(--g500);padding:40px;">No products in this category yet.</p>';
+  // Navigate to browse page — pass skipBrowse=true so renderAll doesn't reset the grid
+  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('page-browse').classList.add('active');
+  currentPage = 'browse';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.getElementById('mainFooter').style.display = 'block';
+  // Render stores (needed by renderAll side-effects) without overwriting browse grid
+  renderAll(true);
+  // Now apply the category filter
+  applyBrowseFilter(cat);
+  // Push history so back button returns to previous page/category
+  history.pushState({ page: 'browse', cat }, '', '#browse' + (cat && cat !== 'all' ? '/' + cat : ''));
 }
 
 function filterCatBrowse(cat, el) {
-  document.querySelectorAll('.filters-bar .filter-chip').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('.filters-bar .filter-chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
-  const bg = document.getElementById('browseGrid');
-  const filtered = cat==='all' ? products : products.filter(p=>p.cat===cat);
-  bg.innerHTML = filtered.length ? filtered.map(p=>makeProductCard(p)).join('') : '<p style="color:var(--g500);padding:40px;">No products found.</p>';
+  applyBrowseFilter(cat);
 }
+
+function applyBrowseFilter(cat) {
+  // Highlight the matching chip in the browse bar
+  document.querySelectorAll('.filters-bar .filter-chip').forEach(chip => {
+    const onclick = chip.getAttribute('onclick') || '';
+    const isMatch = onclick.includes("'" + cat + "'") || onclick.includes('"' + cat + '"');
+    chip.classList.toggle('active', isMatch);
+  });
+  // Update browse page heading
+  const catNames = { all:'All Products', veg:'Vegetables', fruit:'Fruits', dairy:'Dairy', grain:'Organic Rice', spice:'Spices', millet:'Millets', herbal:'Herbal' };
+  const headEl = document.querySelector('#page-browse .sec-head h2');
+  if (headEl) headEl.innerHTML = cat === 'all'
+    ? 'Browse <span>Organic Products</span>'
+    : 'Browse <span>' + (catNames[cat] || cat) + '</span>';
+  // Render filtered products
+  const bg = document.getElementById('browseGrid');
+  const filtered = cat === 'all' ? products : products.filter(p => p.cat === cat);
+  bg.innerHTML = filtered.length
+    ? filtered.map(p => makeProductCard(p)).join('')
+    : '<p style="color:var(--g500);padding:40px 0;">No products found in this category yet.</p>';
+}
+
+// Legacy — kept so any existing call doesn't break
+function filterCat(cat, el) { browseCategory(cat, el); }
 
 function sortProducts(val) {
   let sorted = [...products];
@@ -1597,7 +1716,7 @@ function liveSearch(q) {
 }
 
 // ─── PAGES ───
-function showPage(page) {
+function showPage(page, opts = {}) {
   if (page === 'dashboard' && !currentUser) {
     openAuth('login');
     showToast('Please sign in to view your dashboard');
@@ -1609,10 +1728,30 @@ function showPage(page) {
   window.scrollTo({top:0,behavior:'smooth'});
   const footer = document.getElementById('mainFooter');
   footer.style.display = page==='dashboard' ? 'none' : 'block';
-  if(page==='browse') renderAll();
+  if(page==='browse') renderAll(false);
   if(page==='stores') renderAll();
   if(page==='dashboard') { renderAll(); loadDashboardStats(); loadAddresses(); loadWallet(); }
+
+  // Push a history entry so the browser back button works
+  if (!opts.fromPopState) {
+    const state = { page, cat: opts.cat || null };
+    history.pushState(state, '', '#' + page + (opts.cat && opts.cat !== 'all' ? '/' + opts.cat : ''));
+  }
 }
+
+// ─── BROWSER BACK/FORWARD ───
+window.addEventListener('popstate', function(e) {
+  const state = e.state;
+  if (state && state.page) {
+    showPage(state.page, { fromPopState: true });
+    if (state.page === 'browse' && state.cat) {
+      applyBrowseFilter(state.cat);
+    }
+  } else {
+    // No state = went all the way back to root; show home
+    showPage('home', { fromPopState: true });
+  }
+});
 
 // ─── DASHBOARD TABS ───
 function switchDash(panel, el) {
@@ -2128,6 +2267,8 @@ async function handleAuthRedirect() {
 
 // ─── INIT ───
 (async () => {
+  // Seed a base history entry so the back button works from the very first navigation
+  history.replaceState({ page: 'home', cat: null }, '', window.location.pathname + window.location.search);
   await initSupabase();
   await handleAuthRedirect(); // handles email confirmation tokens in URL
 })();
