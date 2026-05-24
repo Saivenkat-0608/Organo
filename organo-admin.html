@@ -1499,20 +1499,94 @@ function switchTab(el) {
   el.classList.add('active');
 }
 
-// ─── REVENUE CHART ───
-const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-const vals = [42000, 38000, 55000, 61000, 48000, 72000, 67000];
-const maxVal = Math.max(...vals);
-const chart = document.getElementById('revenue-chart');
-if (chart) {
-  days.forEach((d, i) => {
-    const h = Math.round((vals[i] / maxVal) * 140);
-    chart.innerHTML += `
-      <div class="bar-wrap">
-        <div class="bar orange" data-val="₹${(vals[i]/1000).toFixed(0)}K" style="height:${h}px"></div>
-        <span class="bar-label">${d}</span>
-      </div>`;
+// ─── REVENUE CHART (real data) ───
+function buildRevenueChart() {
+  const chart = document.getElementById('revenue-chart');
+  if (!chart) return;
+
+  // Build a map of last 7 days
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const buckets = [];
+  const now = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(now.getDate() - i);
+    buckets.push({ label: dayNames[d.getDay()], dateStr: d.toISOString().slice(0, 10), rev: 0, orders: 0 });
+  }
+
+  allOrders.forEach(o => {
+    const ds = (o.created_at || '').slice(0, 10);
+    const bucket = buckets.find(b => b.dateStr === ds);
+    if (bucket && o.status !== 'cancelled') {
+      bucket.rev += Number(o.total_amount || 0);
+      bucket.orders += 1;
+    }
   });
+
+  const maxRev = Math.max(...buckets.map(b => b.rev), 1);
+  chart.innerHTML = buckets.map(b => {
+    const h = Math.max(8, Math.round((b.rev / maxRev) * 140));
+    const label = b.rev >= 1000 ? '₹' + (b.rev / 1000).toFixed(1) + 'K' : '₹' + b.rev;
+    return `
+      <div class="bar-wrap">
+        <div class="bar orange" data-val="${label}" style="height:${h}px"></div>
+        <span class="bar-label">${b.label}</span>
+      </div>`;
+  }).join('');
+}
+
+// ─── CATEGORY DONUT (real data) ───
+async function buildCategoryDonut() {
+  try {
+    const { data: products } = await db.from('products').select('category_slug').eq('status', 'live');
+    if (!products || !products.length) return;
+
+    // Count by category
+    const counts = {};
+    products.forEach(p => {
+      const cat = p.category_slug || 'other';
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+    const total = products.length;
+
+    // Sort by count desc, take top 4 + "Other"
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const top4 = sorted.slice(0, 4);
+    const otherCount = sorted.slice(4).reduce((s, [, c]) => s + c, 0);
+    if (otherCount > 0) top4.push(['other', otherCount]);
+
+    const colors = ['var(--p)', 'var(--g)', 'var(--admin)', 'var(--earth)', 'var(--g300)'];
+    const circumference = 2 * Math.PI * 50; // r=50
+
+    // Build SVG arcs
+    let offset = 0;
+    const circles = top4.map(([cat, count], i) => {
+      const pct = count / total;
+      const dash = pct * circumference;
+      const circle = `<circle cx="60" cy="60" r="50" fill="none" stroke="${colors[i]}" stroke-width="18" stroke-dasharray="${dash.toFixed(1)} ${(circumference - dash).toFixed(1)}" stroke-dashoffset="${-offset.toFixed(1)}" stroke-linecap="round"/>`;
+      offset += dash;
+      return circle;
+    });
+
+    const donutSvg = document.querySelector('.donut svg');
+    if (donutSvg) {
+      donutSvg.innerHTML = `<circle cx="60" cy="60" r="50" fill="none" stroke="var(--g200)" stroke-width="18"/>` + circles.join('');
+    }
+    const donutCenter = document.querySelector('.donut-center strong');
+    if (donutCenter) donutCenter.textContent = total.toLocaleString('en-IN');
+
+    // Build legend
+    const legend = document.querySelector('.donut-legend');
+    if (legend) {
+      legend.innerHTML = top4.map(([cat, count], i) => {
+        const label = cat.charAt(0).toUpperCase() + cat.slice(1).replace(/_/g, ' ');
+        const pct = Math.round((count / total) * 100);
+        return `<div class="legend-item"><span class="legend-dot" style="background:${colors[i]}"></span><span class="legend-label">${label}</span><span class="legend-val">${pct}%</span></div>`;
+      }).join('');
+    }
+  } catch (e) {
+    console.warn('Category donut error:', e);
+  }
 }
 
 // ─── ADMIN STATE ───
@@ -1523,6 +1597,9 @@ let currentAdminProductId = null;
 
 // ─── ADMIN INIT ───────────────────────────────────────────────
 async function adminInit() {
+  // Show loading skeleton on stat cards
+  document.querySelectorAll('.stat-val').forEach(el => { el.textContent = '…'; });
+
   try {
     // Auth check
     const user = await Auth.getUser();
@@ -1530,13 +1607,18 @@ async function adminInit() {
     const profile = await Auth.getProfile(user.id);
     if (profile?.role !== 'admin') { showToast('Access denied — admin only', 'warn'); return; }
 
-    // Load data
+    // Load data in parallel
     await Promise.all([loadPendingProducts(), loadSellers(), loadOrders(), loadCouponsAdmin(), loadBanners()]);
-    updateDashboardStats();
+
+    // Update all dashboard widgets with real data
+    await updateDashboardStats();
+
     showToast('Dashboard loaded', 'green');
   } catch (err) {
     console.warn('Admin init error (using demo data):', err.message);
-    showToast('Running in demo mode', 'info');
+    // Restore demo values on error so the UI isn't broken
+    buildRevenueChart();
+    showToast('Running in demo mode — Supabase not connected', 'info');
   }
 }
 
@@ -1595,7 +1677,7 @@ async function approveProductDB(productId, name) {
   }
   pendingProducts = pendingProducts.filter(p => p.id !== productId);
   showToast(name + ' approved and live!', 'green');
-  updateDashboardStats();
+  await updateDashboardStats();
 }
 
 async function rejectProductDB(productId) {
@@ -1707,7 +1789,7 @@ async function loadOrders() {
         </select>
       </td>
     </tr>`).join('');
-  updateDashboardStats();
+  await updateDashboardStats();
 }
 
 async function updateOrderStatus(orderId, status) {
@@ -1742,15 +1824,52 @@ async function deleteCoupon(id) {
 // loadBanners(), publishBannerDB(), unpublishBannerDB(), deleteBannerDB()
 // are now handled by the Promo Banner Manager block below.
 
-function updateDashboardStats() {
+async function updateDashboardStats() {
   const statCards = document.querySelectorAll('.stat-val');
-  if (statCards.length >= 4) {
-    const revenue = allOrders.filter(o=>o.status==='delivered').reduce((s,o)=>s+Number(o.total_amount||0),0);
-    statCards[0].textContent = '₹' + (revenue/1000).toFixed(0) + 'K';
-    statCards[1].textContent = allOrders.length;
-    statCards[2].textContent = allSellers.filter(s=>s.status==='approved').length;
-    statCards[3].textContent = pendingProducts.length;
+  if (statCards.length < 4) return;
+
+  // Revenue: sum all non-cancelled orders
+  const revenue = allOrders
+    .filter(o => o.status !== 'cancelled')
+    .reduce((s, o) => s + Number(o.total_amount || 0), 0);
+  statCards[0].textContent = revenue >= 100000
+    ? '₹' + (revenue / 100000).toFixed(2) + 'L'
+    : '₹' + (revenue / 1000).toFixed(1) + 'K';
+
+  // Orders this month
+  const now = new Date();
+  const monthOrders = allOrders.filter(o => {
+    const d = new Date(o.created_at);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  statCards[1].textContent = monthOrders.length.toLocaleString('en-IN');
+
+  // Active (approved) sellers
+  statCards[2].textContent = allSellers.filter(s => s.status === 'approved').length.toLocaleString('en-IN');
+
+  // Registered buyers: query profiles with role = 'buyer'
+  try {
+    const { count } = await db.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'buyer');
+    statCards[3].textContent = (count || 0).toLocaleString('en-IN');
+  } catch {
+    // fallback: count non-seller profiles
+    statCards[3].textContent = '—';
   }
+
+  // Update approvals banner with real pending counts
+  const pendingSellers = allSellers.filter(s => s.status === 'pending').length;
+  const bannerH = document.querySelector('.approvals-banner h4');
+  const bannerP = document.querySelector('.approvals-banner p');
+  if (bannerH) bannerH.textContent = `${pendingProducts.length} product${pendingProducts.length !== 1 ? 's' : ''} awaiting price & approval`;
+  if (bannerP) bannerP.textContent = pendingSellers > 0
+    ? `${pendingSellers} new seller registration${pendingSellers !== 1 ? 's' : ''} also need your review today.`
+    : 'All seller registrations are up to date.';
+
+  // Refresh revenue chart with real data
+  buildRevenueChart();
+
+  // Refresh category donut with real data
+  buildCategoryDonut();
 }
 
 // ─── MODALS ───
