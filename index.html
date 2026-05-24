@@ -783,32 +783,13 @@ footer{background:var(--g900);color:#fff;padding:64px 48px 32px;}
         <!-- Addresses -->
         <div class="dash-panel" id="dash-addresses">
           <div class="dash-title">Saved Addresses</div>
-          <div class="address-list">
-            <div class="addr-card default">
-              <div class="addr-info">
-                <h5>🏠 Home <span style="background:var(--g-light);color:var(--g);font-size:11px;font-weight:700;padding:2px 8px;border-radius:40px;">Default</span></h5>
-                <p>Flat 4B, Green Meadows Apartments,<br>Banjara Hills, Hyderabad — 500034<br>📞 +91 98765 43210</p>
-              </div>
-              <div class="addr-actions">
-                <button>Edit</button>
-                <button>Delete</button>
-              </div>
-            </div>
-            <div class="addr-card">
-              <div class="addr-info">
-                <h5>🏢 Office</h5>
-                <p>TechHub, 3rd Floor, Madhapur,<br>Hyderabad — 500081<br>📞 +91 98765 43210</p>
-              </div>
-              <div class="addr-actions">
-                <button>Edit</button>
-                <button>Set Default</button>
-              </div>
-            </div>
-            <button class="btn btn-ghost" style="width:fit-content;gap:6px;margin-top:6px;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Add New Address
-            </button>
+          <div class="address-list" id="addressList">
+            <div style="color:var(--g500);font-size:14px;padding:20px 0;">Loading addresses…</div>
           </div>
+          <button class="btn btn-ghost" style="width:fit-content;gap:6px;margin-top:6px;" onclick="openAddressModal()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add New Address
+          </button>
         </div>
 
         <!-- Wallet -->
@@ -816,51 +797,21 @@ footer{background:var(--g900);color:#fff;padding:64px 48px 32px;}
           <div class="dash-title">Wallet & Coupons</div>
           <div class="wallet-card">
             <div class="wallet-label">Available Balance</div>
-            <div class="wallet-bal">₹340.00</div>
-            <div class="wallet-sub">2 recent transactions</div>
+            <div class="wallet-bal" id="walletBal">₹0.00</div>
+            <div class="wallet-sub" id="walletSub">Loading…</div>
             <button class="btn" style="background:rgba(255,255,255,.2);color:#fff;margin-top:20px;border:1px solid rgba(255,255,255,.3);">+ Add Money</button>
           </div>
           <h4 style="font-size:16px;margin-bottom:12px;">My Coupons</h4>
-          <div class="coupon-list">
-            <div class="coupon-card">
-              <div class="coupon-left"><span>20%</span><span>Off</span></div>
-              <div class="coupon-right"><h5>ORGANIC20</h5><p>20% off on orders above ₹500</p><p class="coupon-exp">Expires: Jun 30, 2026</p></div>
-            </div>
-            <div class="coupon-card">
-              <div class="coupon-left"><span>₹50</span><span>Off</span></div>
-              <div class="coupon-right"><h5>FIRSTFARM</h5><p>₹50 off on first order from any new store</p><p class="coupon-exp">Expires: Jul 15, 2026</p></div>
-            </div>
-            <div class="coupon-card">
-              <div class="coupon-left"><span>Free</span><span>Delivery</span></div>
-              <div class="coupon-right"><h5>FREEDEL</h5><p>Free delivery on all orders this week</p><p class="coupon-exp">Expires: May 25, 2026</p></div>
-            </div>
+          <div class="coupon-list" id="couponList">
+            <div style="color:var(--g500);font-size:14px;">Loading coupons…</div>
           </div>
         </div>
 
         <!-- Notifications -->
         <div class="dash-panel" id="dash-notifications">
           <div class="dash-title">Notifications</div>
-          <div class="notif-list">
-            <div class="notif-item unread">
-              <div class="notif-icon" style="background:var(--g-pale);">🚛</div>
-              <div class="notif-body"><h5>Order #ORG-1071 is on the way!</h5><p>Your A2 Ghee will arrive today between 3–5 PM</p><p class="notif-time">2 hours ago</p></div>
-            </div>
-            <div class="notif-item unread">
-              <div class="notif-icon" style="background:var(--p-pale);">🎉</div>
-              <div class="notif-body"><h5>Flash Sale! 30% off vegetables</h5><p>Srinivas Organic Farm is running a limited time offer</p><p class="notif-time">5 hours ago</p></div>
-            </div>
-            <div class="notif-item unread">
-              <div class="notif-icon" style="background:var(--earth-l);">🎟</div>
-              <div class="notif-body"><h5>New coupon added to your wallet</h5><p>FREEDEL coupon valid till May 25 has been added</p><p class="notif-time">1 day ago</p></div>
-            </div>
-            <div class="notif-item">
-              <div class="notif-icon" style="background:var(--g-light);">✅</div>
-              <div class="notif-body"><h5>Order #ORG-1084 delivered</h5><p>Your order was successfully delivered. Rate your experience!</p><p class="notif-time">2 days ago</p></div>
-            </div>
-            <div class="notif-item">
-              <div class="notif-icon" style="background:#EDE9FE;">🌱</div>
-              <div class="notif-body"><h5>New store near you!</h5><p>Green Valley Organics has opened just 0.8 km away</p><p class="notif-time">3 days ago</p></div>
-            </div>
+          <div class="notif-list" id="notifList">
+            <div style="color:var(--g500);font-size:14px;padding:20px 0;">Loading notifications…</div>
           </div>
         </div>
 
@@ -1056,14 +1007,79 @@ footer{background:var(--g900);color:#fff;padding:64px 48px 32px;}
   </div>
 </footer>
 
-<!-- ─── SUPABASE ─── -->
+<!-- ADDRESS MODAL -->
+<div class="modal-overlay" id="addressModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-head">
+      <h3 style="font-family:'Playfair Display',serif;" id="addrModalTitle">Add New Address</h3>
+      <button class="close-btn" onclick="closeAddressModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="addrEditId">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Label</label>
+          <select id="addrLabel" style="width:100%;padding:11px 14px;border:1.5px solid var(--g200);border-radius:var(--rs);font-size:14px;font-family:'DM Sans',sans-serif;background:#fff;outline:none;">
+            <option value="Home">🏠 Home</option>
+            <option value="Office">🏢 Office</option>
+            <option value="Other">📍 Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="text" id="addrPhone" placeholder="+91 98765 43210">
+        </div>
+      </div>
+      <div class="form-group"><label>Address Line 1</label><input type="text" id="addrLine1" placeholder="Flat / House No., Building Name"></div>
+      <div class="form-group"><label>Address Line 2</label><input type="text" id="addrLine2" placeholder="Street, Area, Landmark"></div>
+      <div class="form-row">
+        <div class="form-group"><label>City</label><input type="text" id="addrCity" placeholder="Hyderabad"></div>
+        <div class="form-group"><label>State</label><input type="text" id="addrState" placeholder="Telangana"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Pincode</label><input type="text" id="addrPin" placeholder="500034"></div>
+        <div class="form-group" style="justify-content:center;padding-top:28px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
+            <input type="checkbox" id="addrDefault" style="width:16px;height:16px;accent-color:var(--p);">
+            Set as default address
+          </label>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;padding:13px;font-size:15px;margin-top:8px;" onclick="saveAddress()">Save Address</button>
+    </div>
+  </div>
+</div>
+
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="organo-config.js"></script>
 
 <script>
 // ═══════════════════════════════════════════════════════════════
 //  ORGANO STOREFRONT — Supabase-connected logic
-//  Products, sellers, auth, cart, wishlist, orders all wired up
+//  Products, sellers, auth, cart, wishlist, orders, addresses
+//
+//  REQUIRED SUPABASE TABLE (run once in SQL Editor):
+//  CREATE TABLE IF NOT EXISTS addresses (
+//    id          uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+//    user_id     uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+//    label       text DEFAULT 'Home',
+//    phone       text,
+//    line1       text NOT NULL,
+//    line2       text,
+//    city        text NOT NULL,
+//    state       text,
+//    pincode     text NOT NULL,
+//    is_default  boolean DEFAULT false,
+//    created_at  timestamptz DEFAULT now(),
+//    updated_at  timestamptz DEFAULT now()
+//  );
+//  ALTER TABLE addresses ENABLE ROW LEVEL SECURITY;
+//  CREATE POLICY "Users manage own addresses" ON addresses
+//    FOR ALL USING (auth.uid() = user_id);
+//
+//  Optional: add wallet_balance to profiles:
+//  ALTER TABLE profiles ADD COLUMN IF NOT EXISTS wallet_balance numeric DEFAULT 0;
 // ═══════════════════════════════════════════════════════════════
 
 // ─── STATE ───
@@ -1281,7 +1297,7 @@ async function loadDashboardStats() {
     const activeCoupons = allCoupons.filter(c => c.is_active && (!c.expires_at || new Date(c.expires_at) > new Date()));
     const statC = document.getElementById('statCoupons');
     if (statC) statC.textContent = activeCoupons.length;
-    // Notifications
+    // Notifications badge + panel
     const notifs = await Notifications.get(currentUser.id);
     const unread = notifs.filter(n => !n.is_read);
     const badge = document.getElementById('notifBadge');
@@ -1289,11 +1305,11 @@ async function loadDashboardStats() {
       if (unread.length > 0) { badge.textContent = unread.length; badge.style.display = 'inline'; }
       else badge.style.display = 'none';
     }
-    // Render notifications panel
-    const notifList = document.querySelector('#dash-notifications .notif-list');
-    if (notifList && notifs.length) {
+    // Render notifications panel (uses the new #notifList id)
+    const notifList = document.getElementById('notifList');
+    if (notifList) {
       const typeIcon = { info:'ℹ️', order:'📦', promo:'🎉', coupon:'🎟', delivery:'🚛', success:'✅', store:'🌱' };
-      notifList.innerHTML = notifs.map(n=>`
+      notifList.innerHTML = notifs.length ? notifs.map(n=>`
         <div class="notif-item ${n.is_read?'':'unread'}" onclick="markNotifRead('${n.id}',this)">
           <div class="notif-icon" style="background:var(--p-pale);">${typeIcon[n.type]||'🔔'}</div>
           <div class="notif-body">
@@ -1301,8 +1317,15 @@ async function loadDashboardStats() {
             <p>${n.body||''}</p>
             <p class="notif-time">${timeAgo(n.created_at)}</p>
           </div>
-        </div>`).join('');
+        </div>`).join('')
+        : '<div style="color:var(--g500);font-size:14px;padding:12px 0;">No notifications yet.</div>';
     }
+    // Wallet balance in stat card
+    try {
+      const { data: prof } = await db.from('profiles').select('wallet_balance').eq('id', currentUser.id).single();
+      const statWal = document.getElementById('statWallet');
+      if (statWal) statWal.textContent = '₹' + Number(prof?.wallet_balance ?? 0).toFixed(0);
+    } catch(e) { /* wallet column may not exist */ }
   } catch(e) { console.warn('Dashboard stats error:', e.message); }
 }
 
@@ -1560,7 +1583,7 @@ function showPage(page) {
   footer.style.display = page==='dashboard' ? 'none' : 'block';
   if(page==='browse') renderAll();
   if(page==='stores') renderAll();
-  if(page==='dashboard') { renderAll(); loadDashboardStats(); }
+  if(page==='dashboard') { renderAll(); loadDashboardStats(); loadAddresses(); loadWallet(); }
 }
 
 // ─── DASHBOARD TABS ───
@@ -1572,12 +1595,15 @@ function switchDash(panel, el) {
   if(panel==='wishlist'||panel==='recommendations') renderAll();
   if(panel==='orders') loadOrderHistory();
   if(panel==='notifications'||panel==='overview') loadDashboardStats();
+  if(panel==='addresses') loadAddresses();
+  if(panel==='wallet') loadWallet();
 }
 
 // ─── CHECKOUT ───
 function openCheckout() {
   document.getElementById('checkoutModal').classList.add('open');
   checkoutStep(0, document.querySelectorAll('.step-tab')[0]);
+  if (currentUser) loadCheckoutAddresses();
 }
 function closeCheckout() {
   document.getElementById('checkoutModal').classList.remove('open');
@@ -1720,6 +1746,230 @@ async function authSuccess() {
   }
 }
 
+// ─── ADDRESSES (Supabase) ────────────────────────────────────
+let editingAddressId = null;
+
+async function loadAddresses() {
+  if (!currentUser) return;
+  const list = document.getElementById('addressList');
+  if (!list) return;
+  list.innerHTML = '<div style="color:var(--g500);font-size:14px;">Loading…</div>';
+  try {
+    const { data, error } = await db.from('addresses')
+      .select('*').eq('user_id', currentUser.id)
+      .order('is_default', { ascending: false })
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    if (!data || data.length === 0) {
+      list.innerHTML = '<div style="color:var(--g500);font-size:14px;padding:12px 0;">No saved addresses yet. Add one below!</div>';
+      return;
+    }
+    const labelIcon = { Home:'🏠', Office:'🏢', Other:'📍' };
+    list.innerHTML = data.map(a => `
+      <div class="addr-card ${a.is_default ? 'default' : ''}">
+        <div class="addr-info">
+          <h5>${labelIcon[a.label] || '📍'} ${a.label}
+            ${a.is_default ? '<span style="background:var(--g-light);color:var(--g);font-size:11px;font-weight:700;padding:2px 8px;border-radius:40px;">Default</span>' : ''}
+          </h5>
+          <p>${a.line1}${a.line2 ? ', ' + a.line2 : ''}<br>${a.city}${a.state ? ', ' + a.state : ''} — ${a.pincode}${a.phone ? '<br>📞 ' + a.phone : ''}</p>
+        </div>
+        <div class="addr-actions">
+          <button onclick="editAddress(${JSON.stringify(a).split('"').join("'")})">Edit</button>
+          ${!a.is_default ? `<button onclick="setDefaultAddress('${a.id}')">Set Default</button>` : ''}
+          <button onclick="deleteAddress('${a.id}')" style="color:#ef4444;border-color:#fca5a5;">Delete</button>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    list.innerHTML = `<div style="color:#ef4444;font-size:13px;">Could not load addresses: ${e.message}</div>`;
+  }
+}
+
+function openAddressModal(prefill) {
+  editingAddressId = prefill?.id || null;
+  document.getElementById('addrModalTitle').textContent = prefill ? 'Edit Address' : 'Add New Address';
+  document.getElementById('addrEditId').value = prefill?.id || '';
+  document.getElementById('addrLabel').value  = prefill?.label || 'Home';
+  document.getElementById('addrPhone').value  = prefill?.phone || '';
+  document.getElementById('addrLine1').value  = prefill?.line1 || '';
+  document.getElementById('addrLine2').value  = prefill?.line2 || '';
+  document.getElementById('addrCity').value   = prefill?.city  || '';
+  document.getElementById('addrState').value  = prefill?.state || '';
+  document.getElementById('addrPin').value    = prefill?.pincode || '';
+  document.getElementById('addrDefault').checked = prefill?.is_default || false;
+  document.getElementById('addressModal').classList.add('open');
+}
+
+function closeAddressModal() {
+  document.getElementById('addressModal').classList.remove('open');
+  editingAddressId = null;
+}
+
+function editAddress(a) {
+  // a comes in as a JS object (from JSON.stringify in the card)
+  if (typeof a === 'string') {
+    try { a = JSON.parse(a.split("'").join('"')); } catch(e) { return; }
+  }
+  openAddressModal(a);
+}
+
+async function saveAddress() {
+  if (!currentUser) { showToast('Please sign in first'); return; }
+  const line1   = document.getElementById('addrLine1').value.trim();
+  const city    = document.getElementById('addrCity').value.trim();
+  const pincode = document.getElementById('addrPin').value.trim();
+  if (!line1 || !city || !pincode) { showToast('⚠️ Please fill Address, City and Pincode'); return; }
+
+  const payload = {
+    user_id:    currentUser.id,
+    label:      document.getElementById('addrLabel').value,
+    phone:      document.getElementById('addrPhone').value.trim(),
+    line1,
+    line2:      document.getElementById('addrLine2').value.trim(),
+    city,
+    state:      document.getElementById('addrState').value.trim(),
+    pincode,
+    is_default: document.getElementById('addrDefault').checked,
+    updated_at: new Date().toISOString()
+  };
+
+  const btn = document.querySelector('#addressModal .btn-primary');
+  btn.textContent = 'Saving…'; btn.disabled = true;
+
+  try {
+    // If setting as default, clear other defaults first
+    if (payload.is_default) {
+      await db.from('addresses').update({ is_default: false }).eq('user_id', currentUser.id);
+    }
+
+    if (editingAddressId) {
+      const { error } = await db.from('addresses').update(payload).eq('id', editingAddressId);
+      if (error) throw error;
+      showToast('✅ Address updated!');
+    } else {
+      const { error } = await db.from('addresses').insert({ ...payload, created_at: new Date().toISOString() });
+      if (error) throw error;
+      showToast('✅ Address saved!');
+    }
+    closeAddressModal();
+    loadAddresses();
+  } catch(e) {
+    showToast('⚠️ Could not save: ' + e.message);
+  } finally {
+    btn.textContent = 'Save Address'; btn.disabled = false;
+  }
+}
+
+async function setDefaultAddress(id) {
+  if (!currentUser) return;
+  try {
+    await db.from('addresses').update({ is_default: false }).eq('user_id', currentUser.id);
+    await db.from('addresses').update({ is_default: true  }).eq('id', id);
+    showToast('✅ Default address updated!');
+    loadAddresses();
+  } catch(e) { showToast('⚠️ ' + e.message); }
+}
+
+async function deleteAddress(id) {
+  if (!confirm('Delete this address?')) return;
+  try {
+    const { error } = await db.from('addresses').delete().eq('id', id);
+    if (error) throw error;
+    showToast('🗑️ Address deleted');
+    loadAddresses();
+  } catch(e) { showToast('⚠️ ' + e.message); }
+}
+
+// Populate checkout address dropdown from DB
+async function loadCheckoutAddresses() {
+  if (!currentUser) return;
+  try {
+    const { data } = await db.from('addresses').select('*')
+      .eq('user_id', currentUser.id)
+      .order('is_default', { ascending: false });
+    if (!data?.length) return;
+    // Pre-fill checkout form with default address
+    const def = data.find(a => a.is_default) || data[0];
+    const n = currentProfile?.full_name || '';
+    const setVal = (id, v) => { const el = document.getElementById(id); if(el) el.value = v || ''; };
+    // Map to checkout fields (by placeholder matching)
+    const form = document.querySelector('#checkoutStep0');
+    if (!form) return;
+    const inputs = form.querySelectorAll('input');
+    if (inputs[0]) inputs[0].value = n;
+    if (inputs[1]) inputs[1].value = def.phone || '';
+    if (inputs[2]) inputs[2].value = def.line1 || '';
+    if (inputs[3]) inputs[3].value = def.line2 || '';
+    if (inputs[4]) inputs[4].value = def.city  || '';
+    if (inputs[5]) inputs[5].value = def.pincode || '';
+  } catch(e) { /* ignore */ }
+}
+
+// ─── WALLET & COUPONS (Supabase) ─────────────────────────────
+async function loadWallet() {
+  if (!currentUser) return;
+  try {
+    // Wallet balance from profiles table
+    const { data: profile } = await db.from('profiles').select('wallet_balance').eq('id', currentUser.id).single();
+    const balance = profile?.wallet_balance ?? 0;
+    const walletBal = document.getElementById('walletBal');
+    if (walletBal) walletBal.textContent = '₹' + Number(balance).toFixed(2);
+
+    // Wallet transactions count
+    const { data: txns } = await db.from('wallet_transactions')
+      .select('id').eq('user_id', currentUser.id);
+    const walletSub = document.getElementById('walletSub');
+    if (walletSub) walletSub.textContent = txns?.length
+      ? `${txns.length} transaction${txns.length > 1 ? 's' : ''}`
+      : 'No transactions yet';
+
+    // Also update stat card
+    const statW = document.getElementById('statWallet');
+    if (statW) statW.textContent = '₹' + Number(balance).toFixed(0);
+  } catch(e) {
+    const walletBal = document.getElementById('walletBal');
+    if (walletBal) walletBal.textContent = '₹0.00';
+    const walletSub = document.getElementById('walletSub');
+    if (walletSub) walletSub.textContent = 'Wallet not set up';
+  }
+
+  // Coupons
+  try {
+    const coupons = await Coupons.getAll();
+    const list = document.getElementById('couponList');
+    if (!list) return;
+    const active = coupons.filter(c => c.is_active && (!c.expires_at || new Date(c.expires_at) > new Date()));
+    if (!active.length) {
+      list.innerHTML = '<div style="color:var(--g500);font-size:14px;">No active coupons available.</div>';
+      return;
+    }
+    list.innerHTML = active.map(c => {
+      const discLabel = c.discount_type === 'percentage'
+        ? [`${c.discount_value}%`, 'Off']
+        : c.discount_type === 'free_delivery'
+          ? ['Free', 'Delivery']
+          : [`₹${c.discount_value}`, 'Off'];
+      const expiry = c.expires_at
+        ? `Expires: ${new Date(c.expires_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}`
+        : 'No expiry';
+      return `<div class="coupon-card">
+        <div class="coupon-left"><span>${discLabel[0]}</span><span>${discLabel[1]}</span></div>
+        <div class="coupon-right">
+          <h5>${c.code}</h5>
+          <p>${c.description || (c.discount_type === 'percentage' ? `${c.discount_value}% off on orders above ₹${c.min_order||0}` : `₹${c.discount_value} off on orders above ₹${c.min_order||0}`)}</p>
+          <p class="coupon-exp">${expiry}</p>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Update stat
+    const statC = document.getElementById('statCoupons');
+    if (statC) statC.textContent = active.length;
+  } catch(e) {
+    const list = document.getElementById('couponList');
+    if (list) list.innerHTML = '<div style="color:var(--g500);font-size:14px;">Could not load coupons.</div>';
+  }
+}
+
 // ─── GOOGLE OAUTH ─────────────────────────────────────────────
 async function signInWithGoogle() {
   const btn = document.querySelector('.google-btn');
@@ -1760,6 +2010,9 @@ document.getElementById('authModal').parentElement.addEventListener('click',func
   if(e.target===this) this.classList.remove('open');
 });
 document.getElementById('checkoutModal').addEventListener('click',function(e){
+  if(e.target===this) this.classList.remove('open');
+});
+document.getElementById('addressModal').addEventListener('click',function(e){
   if(e.target===this) this.classList.remove('open');
 });
 
