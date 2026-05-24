@@ -416,6 +416,50 @@ table td[style*="font-weight"]{font-family:'Playfair Display',serif !important;f
 </head>
 <body>
 
+<!-- ─── ADMIN LOGIN OVERLAY ─── -->
+<div id="admin-login-overlay" style="
+  position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(135deg,#1A1209 0%,#2d1a0e 50%,#1a0a2e 100%);
+  display:flex;align-items:center;justify-content:center;
+">
+  <div style="
+    background:#fff;border-radius:20px;padding:44px 40px;width:100%;max-width:400px;
+    box-shadow:0 32px 80px rgba(0,0,0,.4);text-align:center;
+  ">
+    <div style="font-family:'Playfair Display',serif;font-size:32px;font-weight:900;color:#F97316;margin-bottom:4px;">
+      Organ<span style="color:#3D7A1F">o</span>
+    </div>
+    <div style="display:inline-block;background:#7C3AED;color:#fff;font-size:11px;font-weight:800;padding:3px 12px;border-radius:20px;letter-spacing:.5px;text-transform:uppercase;margin-bottom:24px;">Admin Panel</div>
+    <h2 style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:#1A1209;margin-bottom:6px;">Welcome back</h2>
+    <p style="font-size:13.5px;color:#8C8070;margin-bottom:28px;">Sign in to your admin account to continue</p>
+
+    <div id="login-error" style="display:none;background:#FEE2E2;color:#DC2626;border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:16px;text-align:left;"></div>
+
+    <div style="text-align:left;margin-bottom:14px;">
+      <label style="font-size:12.5px;font-weight:600;color:#4A4035;display:block;margin-bottom:6px;">Email</label>
+      <input id="admin-email" type="email" placeholder="admin@example.com" style="
+        width:100%;padding:11px 16px;border:1.5px solid #EEE9E0;border-radius:10px;
+        font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;
+      " onkeydown="if(event.key==='Enter')adminLogin()">
+    </div>
+    <div style="text-align:left;margin-bottom:24px;">
+      <label style="font-size:12.5px;font-weight:600;color:#4A4035;display:block;margin-bottom:6px;">Password</label>
+      <input id="admin-password" type="password" placeholder="••••••••" style="
+        width:100%;padding:11px 16px;border:1.5px solid #EEE9E0;border-radius:10px;
+        font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;
+      " onkeydown="if(event.key==='Enter')adminLogin()">
+    </div>
+    <button onclick="adminLogin()" id="login-btn" style="
+      width:100%;padding:13px;background:#F97316;color:#fff;border:none;border-radius:40px;
+      font-size:15px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;
+      transition:background .2s,transform .1s;
+    " onmouseover="this.style.background='#C2410C'" onmouseout="this.style.background='#F97316'">
+      Sign In →
+    </button>
+    <p style="font-size:12px;color:#8C8070;margin-top:18px;">Admin access only. Unauthorised access is prohibited.</p>
+  </div>
+</div>
+
 <div class="layout">
 
 <!-- ─── SIDEBAR ─── -->
@@ -490,7 +534,7 @@ table td[style*="font-weight"]{font-family:'Playfair Display',serif !important;f
   </nav>
 
   <div class="sidebar-bottom">
-    <div class="nav-item" style="color:rgba(255,255,255,.45);">
+    <div class="nav-item" style="color:rgba(255,255,255,.45);" onclick="adminLogout()">
       <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       Logout
     </div>
@@ -1499,94 +1543,20 @@ function switchTab(el) {
   el.classList.add('active');
 }
 
-// ─── REVENUE CHART (real data) ───
-function buildRevenueChart() {
-  const chart = document.getElementById('revenue-chart');
-  if (!chart) return;
-
-  // Build a map of last 7 days
-  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const buckets = [];
-  const now = new Date();
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(now.getDate() - i);
-    buckets.push({ label: dayNames[d.getDay()], dateStr: d.toISOString().slice(0, 10), rev: 0, orders: 0 });
-  }
-
-  allOrders.forEach(o => {
-    const ds = (o.created_at || '').slice(0, 10);
-    const bucket = buckets.find(b => b.dateStr === ds);
-    if (bucket && o.status !== 'cancelled') {
-      bucket.rev += Number(o.total_amount || 0);
-      bucket.orders += 1;
-    }
-  });
-
-  const maxRev = Math.max(...buckets.map(b => b.rev), 1);
-  chart.innerHTML = buckets.map(b => {
-    const h = Math.max(8, Math.round((b.rev / maxRev) * 140));
-    const label = b.rev >= 1000 ? '₹' + (b.rev / 1000).toFixed(1) + 'K' : '₹' + b.rev;
-    return `
+// ─── REVENUE CHART ───
+const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const vals = [42000, 38000, 55000, 61000, 48000, 72000, 67000];
+const maxVal = Math.max(...vals);
+const chart = document.getElementById('revenue-chart');
+if (chart) {
+  days.forEach((d, i) => {
+    const h = Math.round((vals[i] / maxVal) * 140);
+    chart.innerHTML += `
       <div class="bar-wrap">
-        <div class="bar orange" data-val="${label}" style="height:${h}px"></div>
-        <span class="bar-label">${b.label}</span>
+        <div class="bar orange" data-val="₹${(vals[i]/1000).toFixed(0)}K" style="height:${h}px"></div>
+        <span class="bar-label">${d}</span>
       </div>`;
-  }).join('');
-}
-
-// ─── CATEGORY DONUT (real data) ───
-async function buildCategoryDonut() {
-  try {
-    const { data: products } = await db.from('products').select('category_slug').eq('status', 'live');
-    if (!products || !products.length) return;
-
-    // Count by category
-    const counts = {};
-    products.forEach(p => {
-      const cat = p.category_slug || 'other';
-      counts[cat] = (counts[cat] || 0) + 1;
-    });
-    const total = products.length;
-
-    // Sort by count desc, take top 4 + "Other"
-    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-    const top4 = sorted.slice(0, 4);
-    const otherCount = sorted.slice(4).reduce((s, [, c]) => s + c, 0);
-    if (otherCount > 0) top4.push(['other', otherCount]);
-
-    const colors = ['var(--p)', 'var(--g)', 'var(--admin)', 'var(--earth)', 'var(--g300)'];
-    const circumference = 2 * Math.PI * 50; // r=50
-
-    // Build SVG arcs
-    let offset = 0;
-    const circles = top4.map(([cat, count], i) => {
-      const pct = count / total;
-      const dash = pct * circumference;
-      const circle = `<circle cx="60" cy="60" r="50" fill="none" stroke="${colors[i]}" stroke-width="18" stroke-dasharray="${dash.toFixed(1)} ${(circumference - dash).toFixed(1)}" stroke-dashoffset="${-offset.toFixed(1)}" stroke-linecap="round"/>`;
-      offset += dash;
-      return circle;
-    });
-
-    const donutSvg = document.querySelector('.donut svg');
-    if (donutSvg) {
-      donutSvg.innerHTML = `<circle cx="60" cy="60" r="50" fill="none" stroke="var(--g200)" stroke-width="18"/>` + circles.join('');
-    }
-    const donutCenter = document.querySelector('.donut-center strong');
-    if (donutCenter) donutCenter.textContent = total.toLocaleString('en-IN');
-
-    // Build legend
-    const legend = document.querySelector('.donut-legend');
-    if (legend) {
-      legend.innerHTML = top4.map(([cat, count], i) => {
-        const label = cat.charAt(0).toUpperCase() + cat.slice(1).replace(/_/g, ' ');
-        const pct = Math.round((count / total) * 100);
-        return `<div class="legend-item"><span class="legend-dot" style="background:${colors[i]}"></span><span class="legend-label">${label}</span><span class="legend-val">${pct}%</span></div>`;
-      }).join('');
-    }
-  } catch (e) {
-    console.warn('Category donut error:', e);
-  }
+  });
 }
 
 // ─── ADMIN STATE ───
@@ -1595,32 +1565,82 @@ let allSellers      = [];
 let allOrders       = [];
 let currentAdminProductId = null;
 
-// ─── ADMIN INIT ───────────────────────────────────────────────
-async function adminInit() {
-  // Show loading skeleton on stat cards
-  document.querySelectorAll('.stat-val').forEach(el => { el.textContent = '…'; });
-
+// ─── ADMIN LOGIN ─────────────────────────────────────────────
+async function adminLogin() {
+  const email = document.getElementById('admin-email').value.trim();
+  const password = document.getElementById('admin-password').value;
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+  errEl.style.display = 'none';
+  if (!email || !password) {
+    errEl.textContent = 'Please enter your email and password.';
+    errEl.style.display = 'block';
+    return;
+  }
+  btn.textContent = 'Signing in…';
+  btn.disabled = true;
   try {
-    // Auth check
-    const user = await Auth.getUser();
-    if (!user) { showToast('Please sign in as admin', 'warn'); return; }
-    const profile = await Auth.getProfile(user.id);
-    if (profile?.role !== 'admin') { showToast('Access denied — admin only', 'warn'); return; }
-
-    // Load data in parallel
-    await Promise.all([loadPendingProducts(), loadSellers(), loadOrders(), loadCouponsAdmin(), loadBanners()]);
-
-    // Update all dashboard widgets with real data
-    await updateDashboardStats();
-
-    showToast('Dashboard loaded', 'green');
+    const { data, error } = await Auth.signIn(email, password);
+    if (error) throw error;
+    const profile = await Auth.getProfile(data.user.id);
+    if (profile?.role !== 'admin') {
+      await Auth.signOut();
+      throw new Error('Your account does not have admin access.');
+    }
+    document.getElementById('admin-login-overlay').style.display = 'none';
+    await adminLoadDashboard(data.user, profile);
   } catch (err) {
-    console.warn('Admin init error (using demo data):', err.message);
-    // Restore demo values on error so the UI isn't broken
-    buildRevenueChart();
-    showToast('Running in demo mode — Supabase not connected', 'info');
+    errEl.textContent = err.message || 'Sign in failed. Please try again.';
+    errEl.style.display = 'block';
+    btn.textContent = 'Sign In →';
+    btn.disabled = false;
   }
 }
+
+// ─── ADMIN INIT ───────────────────────────────────────────────
+async function adminInit() {
+  document.querySelectorAll('.stat-val').forEach(el => { el.textContent = '…'; });
+  try {
+    const user = await Auth.getUser();
+    if (!user) return; // login overlay stays visible
+    const profile = await Auth.getProfile(user.id);
+    if (profile?.role !== 'admin') {
+      const errEl = document.getElementById('login-error');
+      if (errEl) { errEl.textContent = 'Your account does not have admin access.'; errEl.style.display = 'block'; }
+      return;
+    }
+    document.getElementById('admin-login-overlay').style.display = 'none';
+    await adminLoadDashboard(user, profile);
+  } catch (err) {
+    console.warn('Admin init error:', err.message);
+    // login overlay stays visible for the user to sign in
+  }
+}
+
+async function adminLoadDashboard(user, profile) {
+  const nameEl = document.querySelector('.s-user-info h5');
+  const roleEl = document.querySelector('.s-user-info p');
+  const avatarEl = document.querySelector('.s-avatar');
+  if (nameEl) nameEl.textContent = profile?.full_name || user.email;
+  if (roleEl) roleEl.textContent = 'Super Administrator';
+  if (avatarEl) avatarEl.textContent = (profile?.full_name || user.email || 'A')[0].toUpperCase();
+  await Promise.all([loadPendingProducts(), loadSellers(), loadOrders(), loadCouponsAdmin(), loadBanners()]);
+  await updateDashboardStats();
+  showToast('Dashboard loaded ✓', 'green');
+}
+
+async function adminLogout() {
+  await Auth.signOut();
+  // Reset sidebar user info
+  const nameEl = document.querySelector('.s-user-info h5');
+  if (nameEl) nameEl.textContent = 'Admin';
+  document.getElementById('login-error').style.display = 'none';
+  document.getElementById('admin-email').value = '';
+  document.getElementById('admin-password').value = '';
+  document.getElementById('admin-login-overlay').style.display = 'flex';
+  showToast('Signed out successfully', 'info');
+}
+
 
 async function loadPendingProducts() {
   const { data } = await Products.getPending();
@@ -1677,7 +1697,7 @@ async function approveProductDB(productId, name) {
   }
   pendingProducts = pendingProducts.filter(p => p.id !== productId);
   showToast(name + ' approved and live!', 'green');
-  await updateDashboardStats();
+  updateDashboardStats();
 }
 
 async function rejectProductDB(productId) {
@@ -1789,7 +1809,7 @@ async function loadOrders() {
         </select>
       </td>
     </tr>`).join('');
-  await updateDashboardStats();
+  updateDashboardStats();
 }
 
 async function updateOrderStatus(orderId, status) {
@@ -1824,52 +1844,15 @@ async function deleteCoupon(id) {
 // loadBanners(), publishBannerDB(), unpublishBannerDB(), deleteBannerDB()
 // are now handled by the Promo Banner Manager block below.
 
-async function updateDashboardStats() {
+function updateDashboardStats() {
   const statCards = document.querySelectorAll('.stat-val');
-  if (statCards.length < 4) return;
-
-  // Revenue: sum all non-cancelled orders
-  const revenue = allOrders
-    .filter(o => o.status !== 'cancelled')
-    .reduce((s, o) => s + Number(o.total_amount || 0), 0);
-  statCards[0].textContent = revenue >= 100000
-    ? '₹' + (revenue / 100000).toFixed(2) + 'L'
-    : '₹' + (revenue / 1000).toFixed(1) + 'K';
-
-  // Orders this month
-  const now = new Date();
-  const monthOrders = allOrders.filter(o => {
-    const d = new Date(o.created_at);
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  });
-  statCards[1].textContent = monthOrders.length.toLocaleString('en-IN');
-
-  // Active (approved) sellers
-  statCards[2].textContent = allSellers.filter(s => s.status === 'approved').length.toLocaleString('en-IN');
-
-  // Registered buyers: query profiles with role = 'buyer'
-  try {
-    const { count } = await db.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'buyer');
-    statCards[3].textContent = (count || 0).toLocaleString('en-IN');
-  } catch {
-    // fallback: count non-seller profiles
-    statCards[3].textContent = '—';
+  if (statCards.length >= 4) {
+    const revenue = allOrders.filter(o=>o.status==='delivered').reduce((s,o)=>s+Number(o.total_amount||0),0);
+    statCards[0].textContent = '₹' + (revenue/1000).toFixed(0) + 'K';
+    statCards[1].textContent = allOrders.length;
+    statCards[2].textContent = allSellers.filter(s=>s.status==='approved').length;
+    statCards[3].textContent = pendingProducts.length;
   }
-
-  // Update approvals banner with real pending counts
-  const pendingSellers = allSellers.filter(s => s.status === 'pending').length;
-  const bannerH = document.querySelector('.approvals-banner h4');
-  const bannerP = document.querySelector('.approvals-banner p');
-  if (bannerH) bannerH.textContent = `${pendingProducts.length} product${pendingProducts.length !== 1 ? 's' : ''} awaiting price & approval`;
-  if (bannerP) bannerP.textContent = pendingSellers > 0
-    ? `${pendingSellers} new seller registration${pendingSellers !== 1 ? 's' : ''} also need your review today.`
-    : 'All seller registrations are up to date.';
-
-  // Refresh revenue chart with real data
-  buildRevenueChart();
-
-  // Refresh category donut with real data
-  buildCategoryDonut();
 }
 
 // ─── MODALS ───
@@ -2216,20 +2199,35 @@ function renderBannerCards() {
 async function publishSingleBanner(localId) {
   const draft = bannerDrafts.find(d => d._localId === localId);
   if (!draft) return;
-  const record = { ...draft, status:'live' };
+
+  const record = { ...draft, status: 'live', updated_at: new Date().toISOString() };
   delete record._localId;
+
   try {
-    const { data, error } = await Banners.save(record);
-    if (error) throw error;
+    if (draft.id) {
+      // Update existing banner
+      const { error } = await db.from('hero_banners')
+        .update(record)
+        .eq('id', draft.id);
+      if (error) throw error;
+    } else {
+      // Insert new banner
+      delete record.id;
+      const { data, error } = await db.from('hero_banners')
+        .insert(record)
+        .select('id')
+        .single();
+      if (error) throw error;
+      if (data?.id) draft.id = data.id;
+    }
+
     draft.status = 'live';
-    if (data?.id) draft.id = data.id;
     renderBannerCards();
-    showToast('Slide published to storefront! 🎉', 'green');
-  } catch(err) {
-    // Graceful demo fallback
-    draft.status = 'live';
-    renderBannerCards();
-    showToast('Published (demo mode — Supabase not connected)', 'info');
+    showToast('Slide published to storefront! \u{1F389}', 'green');
+  } catch (err) {
+    console.error('Banner publish error:', err);
+    const msg = err?.message || err?.details || JSON.stringify(err);
+    showToast('Publish failed: ' + msg, 'warn');
   }
 }
 
@@ -2238,21 +2236,28 @@ async function publishAllBanners() {
   if (!bannerDrafts.length) { showToast('No slides to publish yet — add one first', 'warn'); return; }
   let ok = 0, fail = 0;
   for (const draft of bannerDrafts) {
-    const record = { ...draft, status:'live' };
+    const record = { ...draft, status: 'live', updated_at: new Date().toISOString() };
     delete record._localId;
     try {
-      const { data, error } = await Banners.save(record);
-      if (error) throw error;
+      if (draft.id) {
+        const { error } = await db.from('hero_banners').update(record).eq('id', draft.id);
+        if (error) throw error;
+      } else {
+        delete record.id;
+        const { data, error } = await db.from('hero_banners').insert(record).select('id').single();
+        if (error) throw error;
+        if (data?.id) draft.id = data.id;
+      }
       draft.status = 'live';
-      if (data?.id) draft.id = data.id;
       ok++;
-    } catch {
-      draft.status = 'live'; // demo fallback
-      ok++;
+    } catch (err) {
+      console.error('Banner publish error:', err);
+      fail++;
     }
   }
   renderBannerCards();
-  showToast(`${ok} slide${ok!==1?'s':''} published to storefront! 🚀`, 'green');
+  if (ok > 0) showToast(`${ok} slide${ok !== 1 ? 's' : ''} published to storefront! \u{1F680}`, 'green');
+  if (fail > 0) showToast(`${fail} slide${fail !== 1 ? 's' : ''} failed — check console for error details`, 'warn');
 }
 
 // ─── Unpublish / delete ───────────────────────────────────────
@@ -2313,8 +2318,9 @@ adminInit().then(() => {
     if (pendingProducts.length > 0)
       showToast(`${pendingProducts.length} products awaiting approval`, 'warn');
   }, 800);
-}).catch(() => {
-  setTimeout(() => showToast('Running in demo mode — configure Supabase to connect', 'info'), 800);
+}).catch(err => {
+  console.warn('Startup error:', err);
+  // login overlay is already visible — user will sign in
 });
 </script>
 </body>
