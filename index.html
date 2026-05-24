@@ -23,129 +23,168 @@ a{text-decoration:none;color:inherit;}
 img{display:block;max-width:100%;}
 button{cursor:pointer;font-family:'DM Sans',sans-serif;}
 
+/* ─── TOP TICKER BAR ─── */
+.ticker-bar{
+  background:var(--g);color:#fff;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 48px;height:36px;font-size:12px;font-weight:600;letter-spacing:.3px;
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+}
+.ticker-left{display:flex;align-items:center;gap:28px;}
+.ticker-left span{display:flex;align-items:center;gap:7px;opacity:.95;}
+.ticker-right{display:flex;align-items:center;gap:24px;}
+.ticker-right span{display:flex;align-items:center;gap:7px;opacity:.9;}
+
 /* ─── NAV ─── */
 nav {
-  position:fixed;top:0;left:0;right:0;z-index:999;
-  display:flex;align-items:center;gap:24px;
-  padding:0 48px;height:66px;
-  background:rgba(255,252,247,.88);backdrop-filter:blur(18px);
-  border-bottom:1px solid rgba(249,115,22,.1);
+  position:fixed;top:36px;left:0;right:0;z-index:999;
+  display:flex;align-items:center;
+  padding:0 40px;height:68px;
+  background:#fff;
+  border-bottom:1px solid var(--g200);
   transition:box-shadow .3s;
+  gap:0;
 }
 nav.scrolled{box-shadow:0 2px 24px rgba(0,0,0,.09);}
-.logo{font-family:'Playfair Display',serif;font-size:27px;font-weight:900;color:var(--p);letter-spacing:-.5px;white-space:nowrap;}
-.logo span{color:var(--g);}
-.logo-img{height:36px;width:auto;display:block;}
-.nav-links{display:flex;gap:22px;list-style:none;flex:1;}
-.nav-links a{font-size:14px;font-weight:500;color:var(--g500);transition:color .2s;}
-.nav-links a:hover{color:var(--p);}
-.nav-search{flex:1;max-width:300px;position:relative;}
-.nav-search input{width:100%;padding:9px 16px 9px 40px;border:1.5px solid var(--g200);border-radius:40px;font-size:13.5px;font-family:'DM Sans',sans-serif;background:var(--g100);outline:none;transition:border-color .2s,background .2s;}
-.nav-search input:focus{border-color:var(--p-light);background:#fff;}
-.nav-search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);opacity:.45;}
-.nav-actions{display:flex;align-items:center;gap:10px;margin-left:auto;}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:40px;font-size:13.5px;font-weight:600;border:none;transition:all .2s;}
+.logo{display:flex;align-items:center;flex-shrink:0;margin-right:32px;}
+.logo-img{height:46px;width:auto;display:block;}
+.nav-links{display:flex;gap:0;list-style:none;align-items:center;}
+.nav-links a{font-size:13px;font-weight:600;color:var(--g700);padding:6px 12px;border-radius:4px;transition:all .2s;white-space:nowrap;display:block;}
+.nav-links a:hover{color:var(--g);}
+.nav-links a.active-link{color:var(--g);border-bottom:2.5px solid var(--g);border-radius:0;}
+.nav-search{flex:1;max-width:320px;position:relative;margin:0 24px;}
+.nav-search input{width:100%;padding:10px 16px 10px 42px;border:1.5px solid var(--g200);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;background:#fff;outline:none;transition:border-color .2s;color:var(--g900);}
+.nav-search input:focus{border-color:var(--g);}
+.nav-search input::placeholder{color:var(--g500);}
+.nav-search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:.4;}
+.nav-actions{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:8px;font-size:13.5px;font-weight:600;border:none;transition:all .2s;cursor:pointer;}
 .btn-ghost{background:transparent;border:1.5px solid var(--g200);color:var(--g700);}
-.btn-ghost:hover{border-color:var(--p);color:var(--p);}
+.btn-ghost:hover{border-color:var(--g);color:var(--g);}
 .btn-primary{background:var(--p);color:#fff;}
 .btn-primary:hover{background:var(--p-dark);transform:translateY(-1px);}
 .btn-seller{background:var(--g);color:#fff;}
 .btn-seller:hover{background:#2d5a14;}
-.cart-btn{position:relative;width:40px;height:40px;border-radius:50%;border:1.5px solid var(--g200);background:transparent;display:flex;align-items:center;justify-content:center;transition:border-color .2s;}
-.cart-btn:hover{border-color:var(--p);}
-.cart-count{position:absolute;top:-4px;right:-4px;width:18px;height:18px;background:var(--p);color:#fff;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
+.nav-account{display:flex;align-items:center;gap:6px;color:var(--g700);font-size:13px;font-weight:600;cursor:pointer;padding:8px 12px;border-radius:8px;border:none;background:transparent;transition:background .2s;}
+.nav-account:hover{background:var(--g100);}
+.cart-btn{position:relative;display:flex;align-items:center;gap:8px;background:transparent;border:none;cursor:pointer;color:var(--g700);font-size:13px;font-weight:600;padding:8px 12px;border-radius:8px;transition:background .2s;}
+.cart-btn:hover{background:var(--g100);}
+.cart-count{position:absolute;top:2px;right:4px;width:18px;height:18px;background:var(--g);color:#fff;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
 
 /* ─── HERO ─── */
 .hero{
-  padding-top:66px;
   position:relative;overflow:hidden;
-  min-height:520px;display:flex;align-items:center;
+  min-height:400px;display:flex;align-items:center;justify-content:flex-start;
+  background:transparent;
+  padding-top:0;
 }
 .hero-bg{
   position:absolute;inset:0;z-index:0;
-  background:url('Organic-Food-Basket-min-960x330.jpg') center center / cover no-repeat;
+  background-size:cover;
+  background-position:center center;
+  background-repeat:no-repeat;
+  background-color:transparent;
+  opacity:0;
+  transition:opacity .45s ease;
+}
+.hero-bg.loaded{
+  opacity:1;
 }
 .hero-bg::after{
   content:'';position:absolute;inset:0;
-  background:linear-gradient(90deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,.48) 55%, rgba(0,0,0,.15) 100%);
+  background:none;
 }
 .hero-inner{
-  max-width:1280px;margin:0 auto;padding:64px 56px;
+  margin:0;padding:48px 56px;
   position:relative;z-index:1;
   display:flex;flex-direction:column;align-items:flex-start;gap:0;
-  width:100%;
+  width:100%;max-width:600px;
+  text-align:left;
 }
-/* Top announcement bar */
-.hero-announce{
-  display:inline-flex;align-items:center;gap:10px;
-  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
-  backdrop-filter:blur(6px);border-radius:6px;
-  padding:7px 18px;font-size:13px;font-weight:600;color:#fff;
-  margin-bottom:22px;letter-spacing:.2px;
-}
-.hero-announce strong{color:var(--p-light);}
-
-.hero-badge{
-  display:inline-flex;align-items:center;gap:7px;
-  border:1.5px solid rgba(255,255,255,.35);border-radius:30px;
-  padding:5px 14px;font-size:12px;font-weight:700;color:#fff;
-  margin-bottom:18px;letter-spacing:.4px;text-transform:uppercase;
-}
-.hero-badge span{width:7px;height:7px;background:#4ADE80;border-radius:50%;animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
 .hero h1{
   font-family:'Playfair Display',serif;
-  font-size:clamp(32px,4vw,56px);font-weight:900;
-  line-height:1.1;color:#fff;
-  margin-bottom:10px;letter-spacing:-.5px;max-width:640px;
+  font-size:clamp(28px,3.5vw,50px);font-weight:900;
+  line-height:1.05;color:var(--g900);
+  margin-bottom:2px;letter-spacing:-.5px;
 }
-.hero h1 em{font-style:normal;color:var(--p-light);}
-/* Highlighted promo line */
-.hero-highlight{
-  display:inline;background:var(--p);
-  color:#fff;font-weight:800;font-size:clamp(17px,2.2vw,24px);
-  padding:3px 12px;border-radius:4px;margin:0 6px 0 0;
-}
-.hero-promo-line{
-  font-size:clamp(17px,2.2vw,24px);font-weight:600;color:#fff;
-  margin-bottom:6px;line-height:1.5;
+.hero-sub-italic{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(20px,2.4vw,34px);font-weight:700;font-style:italic;
+  color:var(--p);margin-bottom:14px;line-height:1.2;
 }
 .hero-sub{
-  font-size:clamp(15px,1.6vw,18px);font-weight:500;color:#fff;
-  line-height:1.6;margin-bottom:10px;
+  font-size:14px;font-weight:500;color:var(--g700);
+  line-height:1.6;margin-bottom:20px;
 }
-/* Urgency badge */
-.hero-urgency{
-  display:inline-flex;align-items:center;gap:8px;
-  background:var(--g);color:#fff;
-  border-radius:6px;padding:8px 18px;
-  font-size:14px;font-weight:700;margin-bottom:30px;letter-spacing:.1px;
+/* Feature icons row */
+.hero-features{
+  display:flex;gap:16px;flex-wrap:wrap;
+  margin-bottom:24px;
+}
+.hero-feat{
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  font-size:10px;font-weight:700;color:var(--g700);text-align:center;letter-spacing:.2px;text-transform:uppercase;
+}
+.hero-feat-icon{
+  width:40px;height:40px;border-radius:50%;border:1.5px solid var(--g300);
+  display:flex;align-items:center;justify-content:center;font-size:18px;background:#fff;
 }
 
-.hero-btns{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:44px;}
-.hero-btns .btn{padding:14px 30px;font-size:15px;font-weight:700;}
-.btn-hero-primary{background:var(--p);color:#fff;border-radius:8px;}
-.btn-hero-primary:hover{background:var(--p-dark);}
-.btn-hero-ghost{background:transparent;border:2px solid rgba(255,255,255,.6);color:#fff;border-radius:8px;}
-.btn-hero-ghost:hover{background:rgba(255,255,255,.12);}
+.hero-btns{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:0;}
+.hero-btns .btn{padding:12px 26px;font-size:14px;font-weight:700;}
+.btn-hero-primary{background:var(--g);color:#fff;border-radius:8px;border:2px solid var(--g);}
+.btn-hero-primary:hover{background:#2d5a14;}
+.btn-hero-ghost{background:transparent;border:2px solid var(--g700);color:var(--g700);border-radius:8px;display:flex;align-items:center;gap:8px;}
+.btn-hero-ghost:hover{background:var(--g100);}
 
-/* Stats bar */
-.hero-stats{
-  display:flex;gap:40px;flex-wrap:wrap;
-  border-top:1px solid rgba(255,255,255,.18);padding-top:24px;width:100%;max-width:560px;
+/* Slider arrows */
+.hero-arrow{
+  position:absolute;top:50%;transform:translateY(-50%);
+  width:40px;height:40px;border-radius:50%;background:#fff;border:1.5px solid var(--g200);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:3;
+  box-shadow:0 2px 12px rgba(0,0,0,.1);transition:all .2s;font-size:18px;color:var(--g700);
 }
-.stat-item{display:flex;flex-direction:column;}
-.stat-num{font-family:'Playfair Display',serif;font-size:26px;font-weight:900;color:#fff;letter-spacing:-.5px;}
-.stat-label{font-size:11.5px;color:rgba(255,255,255,.6);font-weight:500;margin-top:2px;text-transform:uppercase;letter-spacing:.4px;}
-
+.hero-arrow:hover{background:var(--g);color:#fff;border-color:var(--g);}
+.hero-arrow-left{left:20px;}
+.hero-arrow-right{right:20px;}
 /* Slider nav dots */
 .hero-dots{
   position:absolute;bottom:24px;left:50%;transform:translateX(-50%);
   display:flex;gap:8px;z-index:2;
 }
-.hero-dots span{width:28px;height:4px;border-radius:2px;background:rgba(255,255,255,.35);cursor:pointer;transition:all .3s;}
-.hero-dots span.active{background:var(--p);width:44px;}
+.hero-dots span{width:28px;height:4px;border-radius:2px;background:rgba(0,0,0,.2);cursor:pointer;transition:all .3s;}
+.hero-dots span.active{background:var(--g);width:44px;}
+
+/* ─── QUICK CATEGORIES STRIP ─── */
+.quick-cats{
+  background:#fff;border-top:1px solid var(--g200);border-bottom:1px solid var(--g200);
+  padding:20px 48px;display:flex;align-items:center;gap:0;overflow-x:auto;
+}
+.quick-cat{
+  display:flex;align-items:center;gap:14px;
+  padding:10px 32px;border-right:1px solid var(--g200);cursor:pointer;
+  flex-shrink:0;transition:background .2s;border-radius:0;
+}
+.quick-cat:first-child{padding-left:0;}
+.quick-cat:last-child{border-right:none;}
+.quick-cat:hover{background:var(--g-pale);}
+.quick-cat-img{width:56px;height:56px;border-radius:8px;object-fit:cover;background:var(--g100);}
+.quick-cat-img-emoji{width:56px;height:56px;border-radius:8px;background:var(--g100);display:flex;align-items:center;justify-content:center;font-size:28px;}
+.quick-cat-info h5{font-size:14px;font-weight:700;color:var(--g900);margin-bottom:2px;}
+.quick-cat-info p{font-size:11px;color:var(--g500);margin-bottom:4px;}
+.quick-cat-info a{font-size:11px;font-weight:700;color:var(--g);text-transform:uppercase;letter-spacing:.4px;}
+
+/* ─── TRUST BAR ─── */
+.trust-bar{
+  background:var(--g100);border-top:1px solid var(--g200);
+  padding:24px 48px;display:flex;align-items:center;justify-content:space-around;gap:20px;
+}
+.trust-item{display:flex;align-items:center;gap:14px;}
+.trust-icon{width:44px;height:44px;border-radius:50%;border:1.5px solid var(--g300);display:flex;align-items:center;justify-content:center;font-size:20px;background:#fff;flex-shrink:0;}
+.trust-info h5{font-size:14px;font-weight:700;color:var(--g900);margin-bottom:2px;}
+.trust-info p{font-size:12px;color:var(--g500);}
 
 /* ─── SECTION COMMONS ─── */
 section{padding:80px 48px;max-width:1280px;margin:0 auto;}
@@ -153,25 +192,65 @@ section{padding:80px 48px;max-width:1280px;margin:0 auto;}
 .sec-head h2{font-size:clamp(26px,3vw,38px);font-weight:700;color:var(--g900);}
 .sec-head h2 span{color:var(--p);}
 .sec-head a{font-size:14px;color:var(--p);font-weight:600;display:flex;align-items:center;gap:4px;}
-.tag-label{display:inline-block;background:var(--p-pale);color:var(--p);font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:4px 12px;border-radius:40px;margin-bottom:12px;}
+.tag-label{display:inline-block;background:transparent;color:var(--p);font-size:11.5px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;padding:0;border-radius:0;margin-bottom:10px;}
 
-/* ─── CATEGORIES ─── */
+/* ─── HOME CATEGORY SIDEBAR LAYOUT ─── */
+.home-cat-layout{display:grid;grid-template-columns:260px 1fr;gap:0;border:1.5px solid var(--g200);border-radius:var(--rl);overflow:hidden;background:#fff;}
+
+.home-cat-sidebar{
+  border-right:1.5px solid var(--g200);
+  background:var(--cream);
+  padding:8px 0 16px;
+  max-height:600px;
+  overflow-y:auto;
+}
+.home-cat-sidebar::-webkit-scrollbar{width:4px;}
+.home-cat-sidebar::-webkit-scrollbar-thumb{background:var(--g200);border-radius:2px;}
+
+.home-cat-item{
+  display:flex;align-items:center;gap:13px;
+  padding:11px 20px;cursor:pointer;
+  border:none;background:transparent;width:100%;text-align:left;
+  border-left:3px solid transparent;
+  font-family:'DM Sans',sans-serif;
+  transition:all .18s;
+}
+.home-cat-item:hover{background:var(--g100);}
+.home-cat-item.active{
+  background:var(--g);
+  border-left-color:var(--g);
+  border-radius:0 40px 40px 0;
+  margin-right:16px;
+  width:calc(100% - 16px);
+}
+.home-cat-item.active .home-cat-name{color:#fff;font-weight:700;}
+
+.home-cat-thumb{
+  width:42px;height:42px;border-radius:10px;
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:20px;overflow:hidden;
+}
+.home-cat-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.home-cat-item.active .home-cat-thumb{background:rgba(255,255,255,.18)!important;}
+.home-cat-name{font-size:13.5px;font-weight:600;color:var(--g700);line-height:1.3;}
+
+.home-cat-products{padding:24px 24px 24px;}
+.home-cat-topbar{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;}
+.home-cat-count{font-size:12.5px;color:var(--g500);font-weight:500;margin-bottom:3px;}
+.home-cat-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--g900);}
+
+/* ─── CATEGORIES (old cards — kept for any fallback) ─── */
 .cat-groups{display:flex;flex-direction:column;gap:36px;}
-.cat-group-label{font-size:13px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.cat-group-label{font-size:12px;font-weight:800;color:var(--g700);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
 .cat-group-label::after{content:'';flex:1;height:1px;background:var(--g200);}
 .cat-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:20px;}
 .cat-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;}
-.cat-card{
-  display:flex;flex-direction:column;align-items:center;gap:18px;
-  padding:36px 16px;border-radius:var(--r);cursor:pointer;
-  background:var(--white);border:1.5px solid var(--g200);
-  transition:all .25s;
-}
-.cat-card:hover{border-color:var(--p-light);background:var(--p-pale);transform:translateY(-3px);box-shadow:var(--sh);}
-.cat-card.active{border-color:var(--p);background:var(--p-pale);}
-.cat-icon{width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:48px;overflow:hidden;}
-.cat-icon img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;}
-.cat-name{font-size:14px;font-weight:600;color:var(--g700);text-align:center;line-height:1.35;}
+.cat-card{display:flex;flex-direction:column;align-items:center;gap:0;padding:32px 20px 24px;border-radius:12px;cursor:pointer;background:var(--white);border:1.5px solid #EDEAE3;transition:all .22s;}
+.cat-card:hover{border-color:#c8c0b0;transform:translateY(-3px);box-shadow:0 8px 28px rgba(0,0,0,.08);}
+.cat-card.active{border-color:var(--g);background:var(--g-pale);}
+.cat-icon{width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:54px;overflow:hidden;background:transparent;margin-bottom:18px;}
+.cat-icon img{width:100%;height:100%;object-fit:contain;border-radius:50%;display:block;}
+.cat-name{font-size:15px;font-weight:600;color:var(--g900);text-align:center;line-height:1.35;}
 
 /* ─── PRODUCT GRID ─── */
 .product-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;}
@@ -251,6 +330,76 @@ section{padding:80px 48px;max-width:1280px;margin:0 auto;}
 .filter-chip.active{border-color:var(--p);background:var(--p-pale);color:var(--p);}
 .filter-chip select{border:none;background:transparent;font-size:13px;font-weight:500;color:inherit;cursor:pointer;outline:none;font-family:'DM Sans',sans-serif;}
 .chip-img{width:18px;height:18px;border-radius:50%;object-fit:cover;display:inline-block;vertical-align:middle;flex-shrink:0;}
+
+/* ─── BROWSE SIDEBAR LAYOUT ─── */
+.browse-layout{display:grid;grid-template-columns:280px 1fr;gap:0;align-items:start;}
+.browse-sidebar{
+  position:sticky;top:104px;
+  background:var(--cream);
+  border-right:1px solid var(--g200);
+  padding:28px 0 40px;
+  height:calc(100vh - 104px);
+  overflow-y:auto;
+}
+.browse-sidebar::-webkit-scrollbar{width:4px;}
+.browse-sidebar::-webkit-scrollbar-thumb{background:var(--g200);border-radius:2px;}
+.sidebar-header{padding:0 24px 6px;}
+.sidebar-label{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--p);margin-bottom:4px;}
+.sidebar-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--g900);line-height:1.2;margin-bottom:20px;}
+.sidebar-cat-item{
+  display:flex;align-items:center;gap:14px;
+  padding:11px 24px;cursor:pointer;
+  border-radius:0;border:none;background:transparent;
+  width:100%;text-align:left;
+  transition:all .18s;
+  border-left:3px solid transparent;
+  font-family:'DM Sans',sans-serif;
+}
+.sidebar-cat-item:hover{background:var(--g100);}
+.sidebar-cat-item.active{
+  background:var(--g);
+  border-left-color:var(--g);
+  border-radius:0 40px 40px 0;
+  margin-right:16px;
+}
+.sidebar-cat-item.active .sidebar-cat-name{color:#fff;font-weight:700;}
+.sidebar-cat-thumb{
+  width:44px;height:44px;border-radius:10px;
+  object-fit:cover;background:var(--g100);
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;
+  overflow:hidden;
+}
+.sidebar-cat-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.sidebar-cat-item.active .sidebar-cat-thumb{background:rgba(255,255,255,.2);}
+.sidebar-cat-name{font-size:14px;font-weight:600;color:var(--g700);line-height:1.3;}
+
+/* browse main area */
+.browse-main{padding:28px 32px 60px;}
+.browse-top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:16px;}
+.browse-count{font-size:13px;color:var(--g500);font-weight:500;}
+.browse-store-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--g900);margin-bottom:0;}
+.browse-sort{display:flex;align-items:center;gap:8px;}
+.browse-sort select{padding:8px 14px;border:1.5px solid var(--g200);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;background:#fff;outline:none;color:var(--g700);cursor:pointer;}
+.browse-sort select:focus{border-color:var(--g);}
+
+/* PRODUCT CARDS — variant pills */
+.prod-variants{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.prod-variant-pill{
+  padding:5px 14px;border-radius:40px;font-size:12px;font-weight:600;
+  border:1.5px solid var(--g200);background:var(--white);color:var(--g700);cursor:pointer;
+  transition:all .15s;
+}
+.prod-variant-pill:hover{border-color:var(--g);color:var(--g);}
+.prod-variant-pill.active{background:var(--g);color:#fff;border-color:var(--g);}
+
+/* add to cart button full width */
+.add-btn-full{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--g);color:#fff;border:none;
+  border-radius:40px;padding:12px 20px;font-size:14px;font-weight:700;
+  transition:all .2s;cursor:pointer;margin-top:2px;
+}
+.add-btn-full:hover{background:#2d5a14;transform:translateY(-1px);}
 
 /* ─── CART DRAWER ─── */
 .cart-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1100;opacity:0;pointer-events:none;transition:opacity .3s;}
@@ -460,7 +609,7 @@ footer{background:var(--g900);color:#fff;padding:64px 48px 32px;}
 /* ─── PAGE SECTIONS ─── */
 .page-section{display:none;}
 .page-section.active{display:block;}
-.main-pages{padding-top:66px;}
+.main-pages{padding-top:104px;}
 
 /* ─── PRICE TYPOGRAPHY ─── */
 .prod-price{font-family:'DM Sans',sans-serif;font-size:20px;font-weight:800 !important;letter-spacing:-.3px;color:var(--g900);display:flex;align-items:baseline;gap:3px;}
@@ -475,26 +624,44 @@ footer{background:var(--g900);color:#fff;padding:64px 48px 32px;}
 </head>
 <body>
 
+<!-- TICKER BAR -->
+<div class="ticker-bar">
+  <div class="ticker-left">
+    <span>🌿 100% ORGANIC</span>
+    <span>🧪 CHEMICAL FREE</span>
+    <span>✨ PURE GOODNESS</span>
+    <span>🌍 SUSTAINABLY SOURCED</span>
+  </div>
+  <div class="ticker-right">
+    <span>🚚 Fast Delivery</span>
+    <span>🌾 Farm Fresh</span>
+    <span>🎧 Customer Support</span>
+  </div>
+</div>
+
 <!-- NAV -->
 <nav id="mainNav">
   <div class="logo"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628422/Organo/IMG_4642_nctafr.png" alt="Organo" class="logo-img"></div>
   <ul class="nav-links">
-    <li><a href="#" onclick="showPage('home')">Home</a></li>
-    <li><a href="#" onclick="showPage('browse')">Categories</a></li>
-    <li><a href="#" onclick="showPage('stores')">Organic Stores</a></li>
-    <li><a href="#" onclick="showPage('home')">About</a></li>
-    <li><a href="#" onclick="showPage('home')">Contact</a></li>
+    <li><a href="#" onclick="showPage('home')" class="active-link">HOME</a></li>
+    <li><a href="#" onclick="showPage('browse')">SHOP ▾</a></li>
+    <li><a href="#" onclick="showPage('home')">ABOUT US</a></li>
+    <li><a href="#" onclick="showPage('home')">OUR FARMS</a></li>
+    <li><a href="#" onclick="showPage('home')">BLOG</a></li>
+    <li><a href="#" onclick="showPage('home')">CONTACT US</a></li>
   </ul>
   <div class="nav-search">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    <input type="text" placeholder="Search organic products…" oninput="liveSearch(this.value)">
+    <input type="text" placeholder="Search for organic products..." oninput="liveSearch(this.value)">
   </div>
   <div class="nav-actions">
-    <button class="btn btn-ghost" onclick="openAuth('login')">Login</button>
-    <button class="btn btn-primary" onclick="openAuth('signup')">Sign Up</button>
-    <button class="btn btn-seller" onclick="showPage('dashboard')">My Dashboard</button>
+    <button class="nav-account" onclick="openAuth('login')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      My Account
+    </button>
     <button class="cart-btn" onclick="toggleCart()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      My Cart
       <span class="cart-count" id="cartCount">0</span>
     </button>
   </div>
@@ -509,153 +676,179 @@ footer{background:var(--g900);color:#fff;padding:64px 48px 32px;}
     <!-- HERO -->
     <div class="hero">
       <div class="hero-bg"></div>
-      <div class="hero-inner">
+      <div class="hero-inner" style="visibility:hidden;">
+        <h1></h1>
+        <p class="hero-sub-italic"></p>
+        <p class="hero-sub"></p>
 
-        <div class="hero-badge"><span></span>100% Certified Organic</div>
-
-        <h1>Get a <em>FREE</em><br>Organic Basket</h1>
-
-        <p class="hero-promo-line">
-          <span class="hero-highlight">eco-friendly basket worth ₹500</span>
-        </p>
-        <p class="hero-sub">on orders above ₹2500 · Fresh farm produce delivered to your door</p>
-
-        <div class="hero-urgency">🔥 Limited to first 200 customers only</div>
+        <div class="hero-features" style="display:none;"></div>
 
         <div class="hero-btns">
-          <button class="btn btn-hero-primary" onclick="showPage('browse')">
-            🛒 Shop Now
-          </button>
+          <button class="btn btn-hero-primary" onclick="showPage('browse')">🛒 Shop Now</button>
           <button class="btn btn-hero-ghost" onclick="showPage('stores')">🌿 Explore Stores</button>
         </div>
-
-        <div class="hero-stats">
-          <div class="stat-item"><span class="stat-num">2,400+</span><span class="stat-label">Organic Products</span></div>
-          <div class="stat-item"><span class="stat-num">180+</span><span class="stat-label">Verified Sellers</span></div>
-          <div class="stat-item"><span class="stat-num">4.9★</span><span class="stat-label">Avg Rating</span></div>
-        </div>
-
       </div>
+
+      <button class="hero-arrow hero-arrow-left">&#8249;</button>
+      <button class="hero-arrow hero-arrow-right">&#8250;</button>
       <div class="hero-dots">
-        <span class="active"></span><span></span><span></span>
+        <span class="active"></span><span></span>
+      </div>
+    </div>
+
+    <!-- QUICK CATEGORIES STRIP -->
+    <div class="quick-cats">
+      <div class="quick-cat" onclick="browseCategory('fruit',this)">
+        <img class="quick-cat-img" src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628422/Organo/Frutta-e-verdura-felicita_iraeqf.jpg" alt="Fruits">
+        <div class="quick-cat-info">
+          <h5>Fruits</h5>
+          <p>Farm Fresh &amp; Juicy</p>
+          <a href="#">SHOP NOW ›</a>
+        </div>
+      </div>
+      <div class="quick-cat" onclick="browseCategory('veg',this)">
+        <img class="quick-cat-img" src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628423/Organo/pngtree-3d-fruit-and-vegetable-theme-background-png-image_15967877_qzrhax.png" alt="Vegetables">
+        <div class="quick-cat-info">
+          <h5>Vegetables</h5>
+          <p>Fresh &amp; Nutrient Rich</p>
+          <a href="#">SHOP NOW ›</a>
+        </div>
+      </div>
+      <div class="quick-cat" onclick="browseCategory('oil',this)">
+        <div class="quick-cat-img-emoji">🫙</div>
+        <div class="quick-cat-info">
+          <h5>Oils</h5>
+          <p>Wood Pressed Oils</p>
+          <a href="#">SHOP NOW ›</a>
+        </div>
+      </div>
+      <div class="quick-cat" onclick="browseCategory('dairy',this)">
+        <img class="quick-cat-img" src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628421/Organo/Icon_6-01_stvtzl.jpg" alt="Ghee">
+        <div class="quick-cat-info">
+          <h5>Ghee</h5>
+          <p>A2 Desi Ghee</p>
+          <a href="#">SHOP NOW ›</a>
+        </div>
+      </div>
+      <div class="quick-cat" onclick="browseCategory('millet',this)">
+        <img class="quick-cat-img" src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628420/Organo/png-clipart-millet-platter-whole-grains-disc-bumper-thumbnail_opewmb.png" alt="Millets">
+        <div class="quick-cat-info">
+          <h5>Millets</h5>
+          <p>Ancient Grains</p>
+          <a href="#">SHOP NOW ›</a>
+        </div>
+      </div>
+      <div class="quick-cat" onclick="browseCategory('biscuits',this)">
+        <div class="quick-cat-img-emoji">🍪</div>
+        <div class="quick-cat-info">
+          <h5>Snacks</h5>
+          <p>Healthy &amp; Tasty</p>
+          <a href="#">SHOP NOW ›</a>
+        </div>
+      </div>
+      <div class="quick-cat" onclick="browseCategory('babysoap',this)">
+        <div class="quick-cat-img-emoji">🧴</div>
+        <div class="quick-cat-info">
+          <h5>Soaps</h5>
+          <p>Natural &amp; Handmade</p>
+          <a href="#">SHOP NOW ›</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRUST BAR -->
+    <div class="trust-bar">
+      <div class="trust-item">
+        <div class="trust-icon">🌿</div>
+        <div class="trust-info"><h5>PURE &amp; NATURAL</h5><p>No Chemicals, No Additives</p></div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">🌾</div>
+        <div class="trust-info"><h5>SUSTAINABLY FARMED</h5><p>Good for You, Good for Earth</p></div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">🏡</div>
+        <div class="trust-info"><h5>FARM TO HOME</h5><p>Fresh from Our Farms to Your Doorstep</p></div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">✅</div>
+        <div class="trust-info"><h5>TRUSTED QUALITY</h5><p>Lab Tested &amp; Quality Assured</p></div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">🔒</div>
+        <div class="trust-info"><h5>SECURE PAYMENTS</h5><p>100% Safe &amp; Secure</p></div>
       </div>
     </div>
 
     <!-- CATEGORIES -->
-    <section style="padding-top:60px;">
-      <div class="tag-label">Browse by Type</div>
-      <div class="sec-head"><h2>Shop by <span>Category</span></h2><a href="#" onclick="showPage('browse')">View all categories →</a></div>
-      <div class="cat-groups" id="catGrid">
+    <section style="padding-top:60px;padding-bottom:60px;" id="catGrid">
+      <div class="tag-label">Categories</div>
+      <div class="sec-head"><h2>Shop the <span>Organics</span></h2><a href="#" onclick="showPage('browse')">View all categories →</a></div>
 
-        <!-- 1. Fresh Items -->
-        <div>
-          <div class="cat-group-label">🥬 Fresh Items</div>
-          <div class="cat-grid-4">
-            <div class="cat-card" onclick="browseCategory('veg',this)">
-              <div class="cat-icon" style="background:#F0FDF4;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628423/Organo/pngtree-3d-fruit-and-vegetable-theme-background-png-image_15967877_qzrhax.png" alt="Vegetables"></div>
-              <span class="cat-name">Fresh Vegetables</span>
-            </div>
-            <div class="cat-card" onclick="browseCategory('fruit',this)">
-              <div class="cat-icon" style="background:#FFF7ED;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628422/Organo/Frutta-e-verdura-felicita_iraeqf.jpg" alt="Fruits"></div>
-              <span class="cat-name">Fresh Fruits</span>
-            </div>
-            <div class="cat-card" onclick="browseCategory('dairy',this)">
-              <div class="cat-icon" style="background:#FEF9C3;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628421/Organo/Icon_6-01_stvtzl.jpg" alt="Dairy"></div>
-              <span class="cat-name">Dairy, Bread &amp; Eggs</span>
-            </div>
-          </div>
+      <!-- Two-column: sidebar list + product grid -->
+      <div class="home-cat-layout">
+
+        <!-- LEFT: vertical category list -->
+        <div class="home-cat-sidebar">
+          <button class="home-cat-item active" id="hcat-all" onclick="homeCatFilter('all',this)">
+            <div class="home-cat-thumb" style="background:var(--g100);">🛒</div>
+            <span class="home-cat-name">All products</span>
+          </button>
+          <button class="home-cat-item" id="hcat-dairy" onclick="homeCatFilter('dairy',this)">
+            <div class="home-cat-thumb" style="background:#FEF9C3;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628421/Organo/Icon_6-01_stvtzl.jpg" alt="Ghee &amp; Dairy" onerror="this.parentNode.textContent='🧈'"></div>
+            <span class="home-cat-name">Ghee &amp; Dairy</span>
+          </button>
+          <button class="home-cat-item" id="hcat-fruit" onclick="homeCatFilter('fruit',this)">
+            <div class="home-cat-thumb" style="background:#FFF7ED;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628422/Organo/Frutta-e-verdura-felicita_iraeqf.jpg" alt="Fruits" onerror="this.parentNode.textContent='🍊'"></div>
+            <span class="home-cat-name">Fruits</span>
+          </button>
+          <button class="home-cat-item" id="hcat-oil" onclick="homeCatFilter('oil',this)">
+            <div class="home-cat-thumb" style="background:#FFFBEB;">🫙</div>
+            <span class="home-cat-name">Organic Cooking Oils</span>
+          </button>
+          <button class="home-cat-item" id="hcat-honey" onclick="homeCatFilter('honey',this)">
+            <div class="home-cat-thumb" style="background:#FEF3C7;">🍯</div>
+            <span class="home-cat-name">Honey &amp; Natural Sweeteners</span>
+          </button>
+          <button class="home-cat-item" id="hcat-seeds" onclick="homeCatFilter('seeds',this)">
+            <div class="home-cat-thumb" style="background:#FDF4FF;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628420/Organo/aaedu7wjw_ng2enp.webp" alt="Dry Fruits" onerror="this.parentNode.textContent='🥜'"></div>
+            <span class="home-cat-name">Dry Fruits &amp; Nuts</span>
+          </button>
+          <button class="home-cat-item" id="hcat-spice" onclick="homeCatFilter('spice',this)">
+            <div class="home-cat-thumb" style="background:#FFF0F3;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628421/Organo/herbs-and-spices-clipart-transparent-khada-garam-masala-11563284983a71c5ngmsx_vob3or.png" alt="Spices" onerror="this.parentNode.textContent='🌶️'"></div>
+            <span class="home-cat-name">Spices &amp; Powders</span>
+          </button>
+          <button class="home-cat-item" id="hcat-grain" onclick="homeCatFilter('grain',this)">
+            <div class="home-cat-thumb" style="background:#F0FDF4;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628420/Organo/png-clipart-millet-platter-whole-grains-disc-bumper-thumbnail_opewmb.png" alt="Rice" onerror="this.parentNode.textContent='🌾'"></div>
+            <span class="home-cat-name">Rice Varieties</span>
+          </button>
+          <button class="home-cat-item" id="hcat-biscuits" onclick="homeCatFilter('biscuits',this)">
+            <div class="home-cat-thumb" style="background:#FEF3C7;">🍪</div>
+            <span class="home-cat-name">Snacks &amp; Sweets</span>
+          </button>
+          <button class="home-cat-item" id="hcat-millet" onclick="homeCatFilter('millet',this)">
+            <div class="home-cat-thumb" style="background:#F0FDF4;">🌿</div>
+            <span class="home-cat-name">Millets &amp; Cereals</span>
+          </button>
+          <button class="home-cat-item" id="hcat-herbal" onclick="homeCatFilter('herbal',this)">
+            <div class="home-cat-thumb" style="background:#F5F3FF;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628419/Organo/pngtree-nature-herbal-logo-png-image_6005680_bskipo.png" alt="Herbal" onerror="this.parentNode.textContent='🌱'"></div>
+            <span class="home-cat-name">Health &amp; Herbal</span>
+          </button>
+          <button class="home-cat-item" id="hcat-veg" onclick="homeCatFilter('veg',this)">
+            <div class="home-cat-thumb" style="background:#F0FDF4;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628423/Organo/pngtree-3d-fruit-and-vegetable-theme-background-png-image_15967877_qzrhax.png" alt="Vegetables" onerror="this.parentNode.textContent='🥦'"></div>
+            <span class="home-cat-name">Vegetables</span>
+          </button>
         </div>
 
-        <!-- 2. Grocery & Kitchen -->
-        <div>
-          <div class="cat-group-label">🧺 Grocery &amp; Kitchen</div>
-          <div class="cat-grid-4">
-            <div class="cat-card" onclick="browseCategory('grain',this)">
-              <div class="cat-icon" style="background:#FEF3C7;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628420/Organo/aaedu7wjw_ng2enp.webp" alt="Grains"></div>
-              <span class="cat-name">Atta, Rice &amp; Dal</span>
-            </div>
-            <div class="cat-card" onclick="browseCategory('spice',this)">
-              <div class="cat-icon" style="background:#FFF0F3;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628421/Organo/herbs-and-spices-clipart-transparent-khada-garam-masala-11563284983a71c5ngmsx_vob3or.png" alt="Masalas"></div>
-              <span class="cat-name">Masalas &amp; Spices</span>
-            </div>
-            <div class="cat-card" onclick="browseCategory('oil',this)">
-              <div class="cat-icon" style="background:#FFFBEB;">🫙</div>
-              <span class="cat-name">Oils &amp; Ghee</span>
-            </div>
-            <div class="cat-card" onclick="browseCategory('millet',this)">
-              <div class="cat-icon" style="background:#F0FDF4;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628420/Organo/png-clipart-millet-platter-whole-grains-disc-bumper-thumbnail_opewmb.png" alt="Millets"></div>
-              <span class="cat-name">Millets &amp; Cereals</span>
+        <!-- RIGHT: product grid -->
+        <div class="home-cat-products">
+          <div class="home-cat-topbar">
+            <div>
+              <div class="home-cat-count" id="homeCatCount">Loading…</div>
+              <div class="home-cat-title" id="homeCatTitle">Fresh from Our Farms</div>
             </div>
           </div>
-        </div>
-
-        <!-- 3. Snacks & Drinks -->
-        <div>
-          <div class="cat-group-label">🍿 Snacks &amp; Drinks</div>
-          <div class="cat-grid-4">
-            <div class="cat-card" onclick="browseCategory('seeds',this)">
-              <div class="cat-icon" style="background:#F0FDF4;">🌻</div>
-              <span class="cat-name">Seeds &amp; Nuts</span>
-            </div>
-            <div class="cat-card" onclick="browseCategory('biscuits',this)">
-              <div class="cat-icon" style="background:#FEF3C7;">🍪</div>
-              <span class="cat-name">Biscuits &amp; Cakes</span>
-            </div>
-            <div class="cat-card" onclick="browseCategory('sauces',this)">
-              <div class="cat-icon" style="background:#FFF7ED;">🥫</div>
-              <span class="cat-name">Sauces &amp; Spreads</span>
-            </div>
-            <div class="cat-card" onclick="browseCategory('chips',this)">
-              <div class="cat-icon" style="background:#FFF1F2;">🥨</div>
-              <span class="cat-name">Chips &amp; Namkeen</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 4. Beauty & Wellness -->
-        <div>
-          <div class="cat-group-label">✨ Beauty &amp; Wellness</div>
-          <div class="cat-grid-4">
-            <div class="cat-card" onclick="browseCategory('bath',this)">
-              <div class="cat-icon" style="background:#F0F9FF;">🛁</div>
-              <span class="cat-name">Bath &amp; Body</span>
-            </div>
-            <div class="cat-card" onclick="browseCategory('haircare',this)">
-              <div class="cat-icon" style="background:#FDF4FF;">💆</div>
-              <span class="cat-name">Hair Care</span>
-            </div>
-            <div class="cat-card" onclick="browseCategory('skincare',this)">
-              <div class="cat-icon" style="background:#FFF7ED;">🌸</div>
-              <span class="cat-name">Skin Care</span>
-            </div>
-            <div class="cat-card" onclick="browseCategory('herbal',this)">
-              <div class="cat-icon" style="background:#F5F3FF;"><img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628419/Organo/pngtree-nature-herbal-logo-png-image_6005680_bskipo.png" alt="Herbal"></div>
-              <span class="cat-name">Health &amp; Pharma</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 5. Baby Care -->
-        <div>
-          <div class="cat-group-label">🍼 Baby Care</div>
-          <div class="cat-grid-4">
-            <div class="cat-card" onclick="browseCategory('babyshampoo',this)">
-              <div class="cat-icon" style="background:#F0F9FF;">🧴</div>
-              <span class="cat-name">Baby Shampoos</span>
-            </div>
-            <div class="cat-card" onclick="browseCategory('babyskin',this)">
-              <div class="cat-icon" style="background:#FDF4FF;">🌿</div>
-              <span class="cat-name">Baby Skin Care</span>
-            </div>
-            <div class="cat-card" onclick="browseCategory('babysoap',this)">
-              <div class="cat-icon" style="background:#F0FDF4;">🫧</div>
-              <span class="cat-name">Baby Soaps</span>
-            </div>
-            <div class="cat-card" onclick="browseCategory('babyfood',this)">
-              <div class="cat-icon" style="background:#FEF3C7;">🥣</div>
-              <span class="cat-name">Baby Food</span>
-            </div>
-          </div>
+          <div class="product-grid" id="homeCatGrid" style="grid-template-columns:repeat(3,1fr);"></div>
         </div>
 
       </div>
@@ -720,30 +913,118 @@ footer{background:var(--g900);color:#fff;padding:64px 48px 32px;}
 
   <!-- BROWSE PAGE -->
   <div class="page-section" id="page-browse">
-    <section style="padding-top:100px;">
-      <div class="tag-label">All Products</div>
-      <div class="sec-head"><h2>Browse <span>Organic Products</span></h2></div>
-      <div class="filters-bar">
-        <div class="filter-chip active" onclick="filterCatBrowse('all',this)"><img src="https://source.unsplash.com/20x20/?organic,market" class="chip-img" alt=""> All</div>
-        <div class="filter-chip" onclick="filterCatBrowse('veg',this)"><img src="https://source.unsplash.com/20x20/?broccoli" class="chip-img" alt=""> Vegetables</div>
-        <div class="filter-chip" onclick="filterCatBrowse('fruit',this)"><img src="https://source.unsplash.com/20x20/?fresh,fruits" class="chip-img" alt=""> Fruits</div>
-        <div class="filter-chip" onclick="filterCatBrowse('dairy',this)"><img src="https://source.unsplash.com/20x20/?milk,dairy" class="chip-img" alt=""> Dairy</div>
-        <div class="filter-chip" onclick="filterCatBrowse('grain',this)"><img src="https://source.unsplash.com/20x20/?rice,grains" class="chip-img" alt=""> Grains</div>
-        <div class="filter-chip" onclick="filterCatBrowse('spice',this)"><img src="https://source.unsplash.com/20x20/?spices,chilli" class="chip-img" alt=""> Spices</div>
-        <div class="filter-chip" onclick="filterCatBrowse('millet',this)"><img src="https://source.unsplash.com/20x20/?millet,grain" class="chip-img" alt=""> Millets</div>
-        <div class="filter-chip" onclick="filterCatBrowse('herbal',this)"><img src="https://source.unsplash.com/20x20/?herbs,moringa" class="chip-img" alt=""> Herbal</div>
-        <div class="filter-chip" style="margin-left:auto;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-          <select onchange="sortProducts(this.value)">
-            <option value="">Sort by</option>
-            <option value="price_asc">Price: Low to High</option>
-            <option value="price_desc">Price: High to Low</option>
-            <option value="rating">Top Rated</option>
-          </select>
+    <div class="browse-layout">
+
+      <!-- LEFT SIDEBAR -->
+      <aside class="browse-sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-label">Categories</div>
+          <div class="sidebar-title">Shop the<br>harvest</div>
         </div>
+
+        <!-- All products -->
+        <button class="sidebar-cat-item active" id="scat-all" onclick="sidebarFilterCat('all',this)">
+          <div class="sidebar-cat-thumb" style="background:var(--g100);">🛒</div>
+          <span class="sidebar-cat-name">All products</span>
+        </button>
+
+        <!-- Ghee & Dairy -->
+        <button class="sidebar-cat-item" id="scat-dairy" onclick="sidebarFilterCat('dairy',this)">
+          <div class="sidebar-cat-thumb" style="background:#FEF3C7;">
+            <img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628419/Organo/pngtree-nature-herbal-logo-png-image_6005680_bskipo.png" alt="Ghee &amp; Dairy" onerror="this.parentNode.textContent='🧈'">
+          </div>
+          <span class="sidebar-cat-name">Ghee &amp; Dairy</span>
+        </button>
+
+        <!-- Fruits -->
+        <button class="sidebar-cat-item" id="scat-fruit" onclick="sidebarFilterCat('fruit',this)">
+          <div class="sidebar-cat-thumb" style="background:#F0FDF4;">🍊</div>
+          <span class="sidebar-cat-name">Fruits</span>
+        </button>
+
+        <!-- Organic Cooking Oils -->
+        <button class="sidebar-cat-item" id="scat-oil" onclick="sidebarFilterCat('oil',this)">
+          <div class="sidebar-cat-thumb" style="background:#FFFBEB;">🫙</div>
+          <span class="sidebar-cat-name">Organic Cooking Oils</span>
+        </button>
+
+        <!-- Honey & Natural Sweeteners -->
+        <button class="sidebar-cat-item" id="scat-honey" onclick="sidebarFilterCat('honey',this)">
+          <div class="sidebar-cat-thumb" style="background:#FEF3C7;">🍯</div>
+          <span class="sidebar-cat-name">Honey &amp; Natural Sweeteners</span>
+        </button>
+
+        <!-- Dry Fruits & Nuts -->
+        <button class="sidebar-cat-item" id="scat-seeds" onclick="sidebarFilterCat('seeds',this)">
+          <div class="sidebar-cat-thumb" style="background:#FDF4FF;">
+            <img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628420/Organo/aaedu7wjw_ng2enp.webp" alt="Dry Fruits" onerror="this.parentNode.textContent='🥜'">
+          </div>
+          <span class="sidebar-cat-name">Dry Fruits &amp; Nuts</span>
+        </button>
+
+        <!-- Spices & Powders -->
+        <button class="sidebar-cat-item" id="scat-spice" onclick="sidebarFilterCat('spice',this)">
+          <div class="sidebar-cat-thumb" style="background:#FFF0F3;">
+            <img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628421/Organo/herbs-and-spices-clipart-transparent-khada-garam-masala-11563284983a71c5ngmsx_vob3or.png" alt="Spices" onerror="this.parentNode.textContent='🌶️'">
+          </div>
+          <span class="sidebar-cat-name">Spices &amp; Powders</span>
+        </button>
+
+        <!-- Rice Varieties -->
+        <button class="sidebar-cat-item" id="scat-grain" onclick="sidebarFilterCat('grain',this)">
+          <div class="sidebar-cat-thumb" style="background:#F0FDF4;">
+            <img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628420/Organo/png-clipart-millet-platter-whole-grains-disc-bumper-thumbnail_opewmb.png" alt="Rice" onerror="this.parentNode.textContent='🌾'">
+          </div>
+          <span class="sidebar-cat-name">Rice Varieties</span>
+        </button>
+
+        <!-- Snacks & Sweets -->
+        <button class="sidebar-cat-item" id="scat-biscuits" onclick="sidebarFilterCat('biscuits',this)">
+          <div class="sidebar-cat-thumb" style="background:#FEF3C7;">🍪</div>
+          <span class="sidebar-cat-name">Snacks &amp; Sweets</span>
+        </button>
+
+        <!-- Millets & Cereals -->
+        <button class="sidebar-cat-item" id="scat-millet" onclick="sidebarFilterCat('millet',this)">
+          <div class="sidebar-cat-thumb" style="background:#F0FDF4;">🌿</div>
+          <span class="sidebar-cat-name">Millets &amp; Cereals</span>
+        </button>
+
+        <!-- Herbal / Health -->
+        <button class="sidebar-cat-item" id="scat-herbal" onclick="sidebarFilterCat('herbal',this)">
+          <div class="sidebar-cat-thumb" style="background:#F5F3FF;">
+            <img src="https://res.cloudinary.com/drfl8crbx/image/upload/v1779628419/Organo/pngtree-nature-herbal-logo-png-image_6005680_bskipo.png" alt="Herbal" onerror="this.parentNode.textContent='🌱'">
+          </div>
+          <span class="sidebar-cat-name">Health &amp; Herbal</span>
+        </button>
+
+        <!-- Vegetables -->
+        <button class="sidebar-cat-item" id="scat-veg" onclick="sidebarFilterCat('veg',this)">
+          <div class="sidebar-cat-thumb" style="background:#F0FDF4;">🥦</div>
+          <span class="sidebar-cat-name">Vegetables</span>
+        </button>
+      </aside>
+
+      <!-- RIGHT MAIN -->
+      <div class="browse-main">
+        <div class="browse-top-bar">
+          <div>
+            <div class="browse-count" id="browseCount">Loading products…</div>
+            <div class="browse-store-title" id="browseTitle">Fresh Organic Products</div>
+          </div>
+          <div class="browse-sort">
+            <select onchange="sortProducts(this.value)">
+              <option value="">Sort by</option>
+              <option value="price_asc">Price: Low to High</option>
+              <option value="price_desc">Price: High to Low</option>
+              <option value="rating">Top Rated</option>
+            </select>
+          </div>
+        </div>
+        <div class="product-grid" id="browseGrid"></div>
       </div>
-      <div class="product-grid" id="browseGrid"></div>
-    </section>
+
+    </div>
   </div>
 
   <!-- STORES PAGE -->
@@ -1189,10 +1470,10 @@ const FALLBACK_PRODUCTS = [
 ];
 
 const FALLBACK_STORES = [
-  {name:'Green Valley Farms',img:'https://source.unsplash.com/80x80/?farm,vegetables',cat:'Vegetables & Greens',dist:'0.4 km',rating:4.9,orders:1240,since:'2021',badges:['FSSAI','Organic Cert.'],color:'#F0FDF4'},
-  {name:'Srinivas Organic Farm',img:'https://source.unsplash.com/80x80/?cow,dairy-farm',cat:'Dairy & Ghee',dist:'1.2 km',rating:4.8,orders:890,since:'2020',badges:['A2 Certified','FSSAI'],color:'#FEF9C3'},
-  {name:'Konkan Organics',img:'https://source.unsplash.com/80x80/?mango,tropical',cat:'Tropical Fruits',dist:'2.1 km',rating:4.9,orders:640,since:'2022',badges:['Organic Cert.','Export Quality'],color:'#FFF7ED'},
-  {name:'Tribal Organics',img:'https://source.unsplash.com/80x80/?millet,harvest',cat:'Millets & Grains',dist:'3.0 km',rating:4.7,orders:420,since:'2019',badges:['Tribal Certified','Organic'],color:'#FEF3C7'},
+  {name:'Green Valley Farms',img:'https://res.cloudinary.com/drfl8crbx/image/upload/v1779652825/Organo/ChatGPT_Image_May_25_2026_12_09_20_AM_duhr6j.png',cat:'Vegetables & Greens',dist:'0.4 km',rating:4.9,orders:1240,since:'2021',badges:['FSSAI','Organic Cert.'],color:'#F0FDF4'},
+  {name:'Srinivas Organic Farm',img:'https://res.cloudinary.com/drfl8crbx/image/upload/v1779652805/Organo/ChatGPT_Image_May_25_2026_01_28_51_AM_fz0gyi.png',cat:'Dairy & Ghee',dist:'1.2 km',rating:4.8,orders:890,since:'2020',badges:['A2 Certified','FSSAI'],color:'#FEF9C3'},
+  {name:'Konkan Organics',img:'https://res.cloudinary.com/drfl8crbx/image/upload/v1779653045/Organo/ChatGPT_Image_May_25_2026_01_32_15_AM_z16nx2.png',cat:'Tropical Fruits',dist:'2.1 km',rating:4.9,orders:640,since:'2022',badges:['Organic Cert.','Export Quality'],color:'#FFF7ED'},
+  {name:'Tribal Organics',img:'https://res.cloudinary.com/drfl8crbx/image/upload/v1779653050/Organo/ChatGPT_Image_May_25_2026_01_33_21_AM_f9xgqs.png',cat:'Millets & Grains',dist:'3.0 km',rating:4.7,orders:420,since:'2019',badges:['Tribal Certified','Organic'],color:'#FEF3C7'},
   {name:'Ayur Organics',img:'https://source.unsplash.com/80x80/?herbs,ayurveda',cat:'Herbs & Superfoods',dist:'1.8 km',rating:4.8,orders:510,since:'2021',badges:['FSSAI','Ayurvedic'],color:'#F0FDF4'},
   {name:'Spice Routes',img:'https://source.unsplash.com/80x80/?spices,market',cat:'Spices & Condiments',dist:'4.2 km',rating:4.9,orders:730,since:'2020',badges:['FSSAI','GI Tagged'],color:'#FFF1F0'},
 ];
@@ -1440,26 +1721,55 @@ function applyHeroBanner(v) {
   if (!v) return;
   function renderHl(raw) { return (raw||'').replace(/\[em\](.*?)\[\/em\]/g,'<em>$1</em>'); }
   function overlayGrad(level) {
+    if (level === 'none') return 'none';
     const a = {light:'.40',medium:'.65',dark:'.78'}[level||'medium']||'.65';
     return `linear-gradient(90deg,rgba(0,0,0,${a}) 0%,rgba(0,0,0,${(parseFloat(a)-.15).toFixed(2)}) 55%,rgba(0,0,0,.10) 100%)`;
   }
   const bg = document.querySelector('.hero-bg');
-  if (bg && v.bg_url) {
-    bg.style.backgroundImage = `url('${v.bg_url}')`;
+  if (bg) {
+    const computedOverlay = overlayGrad(v.overlay);
     const ovEl = document.createElement('style');
-    ovEl.textContent = `.hero-bg::after{background:${overlayGrad(v.overlay)}!important;}`;
+    ovEl.textContent = computedOverlay === 'none'
+      ? `.hero-bg::after{display:none!important;}`
+      : `.hero-bg::after{background:${computedOverlay}!important;}`;
     document.head.appendChild(ovEl);
+    if (v.bg_url) {
+      bg.style.backgroundSize     = 'cover';
+      bg.style.backgroundPosition = 'center center';
+      bg.style.backgroundRepeat   = 'no-repeat';
+      // Preload before revealing to eliminate flash of wrong content
+      const img = new Image();
+      img.onload  = () => { bg.style.backgroundImage = `url('${v.bg_url}')`; bg.classList.add('loaded'); };
+      img.onerror = () => { bg.classList.add('loaded'); };
+      img.src = v.bg_url;
+    } else {
+      bg.style.backgroundImage = 'none';
+      bg.classList.add('loaded');
+    }
   }
   const h1 = document.querySelector('.hero h1');
-  if (h1 && v.headline) h1.innerHTML = renderHl(v.headline);
-  const hl = document.querySelector('.hero-highlight');
-  if (hl && v.highlight) { hl.textContent = v.highlight; if(v.hl_color) hl.style.background = v.hl_color; }
+  if (h1) h1.innerHTML = v.headline ? renderHl(v.headline) : '';
+  const subItalic = document.querySelector('.hero-sub-italic');
+  if (subItalic) subItalic.textContent = v.highlight || '';
   const sub = document.querySelector('.hero-sub');
-  if (sub && v.sub_text) sub.textContent = v.sub_text;
+  if (sub) sub.textContent = v.sub_text || '';
   const urg = document.querySelector('.hero-urgency');
   if (urg) { if(v.urgency_text) urg.textContent = v.urgency_text; urg.style.display = v.urgency_show ? 'inline-flex':'none'; if(v.urg_color) urg.style.background=v.urg_color; }
   const hero = document.querySelector('.hero');
   if (hero && v.hero_height) hero.style.minHeight = v.hero_height;
+  // Rebuild feature icons from banner data (or keep empty)
+  const feats = document.querySelector('.hero-features');
+  if (feats && v.features && v.features.length) {
+    feats.innerHTML = v.features.map(f =>
+      `<div class='hero-feat'><div class='hero-feat-icon'>${f.icon||''}</div><span>${f.label||''}</span></div>`
+    ).join('');
+    feats.style.display = 'flex';
+  } else if (feats) {
+    feats.style.display = 'none';
+  }
+  // Reveal hero-inner now that all content is populated
+  const inner = document.querySelector('.hero-inner');
+  if (inner) inner.style.visibility = 'visible';
 
   // ── Button labels + redirect links ──────────────────────────
   // The admin can optionally store btn1_link / btn2_link in the banner row.
@@ -1537,10 +1847,11 @@ function renderAll(skipBrowse = false) {
   // Featured (first 8)
   const fg = document.getElementById('featuredGrid');
   if(fg) fg.innerHTML = products.slice(0,8).map(p=>makeProductCard(p)).join('');
+  // Home category sidebar grid
+  homeCatFilter('all', document.getElementById('hcat-all'));
   // Browse — skip if a category filter is about to be applied
   if (!skipBrowse) {
-    const bg = document.getElementById('browseGrid');
-    if(bg) bg.innerHTML = products.map(p=>makeProductCard(p)).join('');
+    applyBrowseFilter('all');
   }
   // Nearby stores (first 4)
   const nsg = document.getElementById('nearbyStoresGrid');
@@ -1648,9 +1959,34 @@ async function toggleWish(id, btn) {
 
 // ─── FILTERS ───
 // Called from homepage category cards — navigates to browse page with filter applied
+// ─── HOME PAGE CATEGORY SIDEBAR ───
+function homeCatFilter(cat, el) {
+  document.querySelectorAll('.home-cat-item').forEach(c => c.classList.remove('active'));
+  if (el) el.classList.add('active');
+
+  const catNames = {
+    all:'Fresh from Our Farms', veg:'Vegetables', fruit:'Fruits',
+    dairy:'Ghee & Dairy', grain:'Rice Varieties', spice:'Spices & Powders',
+    millet:'Millets & Cereals', herbal:'Health & Herbal', oil:'Organic Cooking Oils',
+    seeds:'Dry Fruits & Nuts', honey:'Honey & Natural Sweeteners',
+    biscuits:'Snacks & Sweets'
+  };
+
+  const filtered = cat === 'all' ? products : products.filter(p => p.cat === cat);
+  const grid = document.getElementById('homeCatGrid');
+  const count = document.getElementById('homeCatCount');
+  const title = document.getElementById('homeCatTitle');
+
+  if (count) count.textContent = filtered.length + ' product' + (filtered.length !== 1 ? 's' : '') + ' available';
+  if (title) title.textContent = catNames[cat] || cat;
+  if (grid) grid.innerHTML = filtered.length
+    ? filtered.slice(0, 9).map(p => makeProductCardShop(p)).join('')
+    : '<p style="color:var(--g500);padding:40px 0;grid-column:1/-1;">No products in this category yet.</p>';
+}
+
 function browseCategory(cat, el) {
   document.querySelectorAll('#catGrid .cat-card').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
+  if (el && el.classList) el.classList.add('active');
   // Navigate to browse page — pass skipBrowse=true so renderAll doesn't reset the grid
   document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
   document.getElementById('page-browse').classList.add('active');
@@ -1659,37 +1995,87 @@ function browseCategory(cat, el) {
   document.getElementById('mainFooter').style.display = 'block';
   // Render stores (needed by renderAll side-effects) without overwriting browse grid
   renderAll(true);
-  // Now apply the category filter
-  applyBrowseFilter(cat);
+  // Now apply the category filter via sidebar
+  sidebarFilterCat(cat, document.getElementById('scat-' + cat));
   // Push history so back button returns to previous page/category
   history.pushState({ page: 'browse', cat }, '', '#browse' + (cat && cat !== 'all' ? '/' + cat : ''));
 }
 
 function filterCatBrowse(cat, el) {
-  document.querySelectorAll('.filters-bar .filter-chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
+  sidebarFilterCat(cat, document.getElementById('scat-' + cat) || el);
+}
+
+function sidebarFilterCat(cat, el) {
+  // Update sidebar active state
+  document.querySelectorAll('.sidebar-cat-item').forEach(c => c.classList.remove('active'));
+  if (el) el.classList.add('active');
   applyBrowseFilter(cat);
 }
 
 function applyBrowseFilter(cat) {
-  // Highlight the matching chip in the browse bar
-  document.querySelectorAll('.filters-bar .filter-chip').forEach(chip => {
-    const onclick = chip.getAttribute('onclick') || '';
-    const isMatch = onclick.includes("'" + cat + "'") || onclick.includes('"' + cat + '"');
-    chip.classList.toggle('active', isMatch);
+  // Sync sidebar highlight when called externally
+  document.querySelectorAll('.sidebar-cat-item').forEach(item => {
+    const id = item.id || '';
+    const isMatch = id === 'scat-' + cat || (cat === 'all' && id === 'scat-all');
+    item.classList.toggle('active', isMatch);
   });
-  // Update browse page heading
-  const catNames = { all:'All Products', veg:'Vegetables', fruit:'Fruits', dairy:'Dairy', grain:'Organic Rice', spice:'Spices', millet:'Millets', herbal:'Herbal' };
-  const headEl = document.querySelector('#page-browse .sec-head h2');
-  if (headEl) headEl.innerHTML = cat === 'all'
-    ? 'Browse <span>Organic Products</span>'
-    : 'Browse <span>' + (catNames[cat] || cat) + '</span>';
+
+  // Category display names
+  const catNames = {
+    all:'All products', veg:'Vegetables', fruit:'Fruits',
+    dairy:'Ghee & Dairy', grain:'Rice Varieties', spice:'Spices & Powders',
+    millet:'Millets & Cereals', herbal:'Health & Herbal', oil:'Organic Cooking Oils',
+    seeds:'Dry Fruits & Nuts', honey:'Honey & Natural Sweeteners',
+    biscuits:'Snacks & Sweets', sauces:'Sauces & Spreads', chips:'Chips & Namkeen'
+  };
+
+  // Update count + title
+  const filtered = cat === 'all' ? products : products.filter(p => p.cat === cat);
+  const countEl = document.getElementById('browseCount');
+  const titleEl = document.getElementById('browseTitle');
+  if (countEl) countEl.textContent = filtered.length + ' product' + (filtered.length !== 1 ? 's' : '') + ' available';
+  if (titleEl) titleEl.textContent = catNames[cat] || cat;
+
   // Render filtered products
   const bg = document.getElementById('browseGrid');
-  const filtered = cat === 'all' ? products : products.filter(p => p.cat === cat);
+  if (!bg) return;
   bg.innerHTML = filtered.length
-    ? filtered.map(p => makeProductCard(p)).join('')
+    ? filtered.map(p => makeProductCardShop(p)).join('')
     : '<p style="color:var(--g500);padding:40px 0;">No products found in this category yet.</p>';
+}
+
+function makeProductCardShop(p) {
+  const img = p.image
+    ? `<img src="${p.image}" style="width:100%;height:100%;object-fit:cover;" alt="${p.name}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">
+       <div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:60px;">${p.emoji||'🌿'}</div>`
+    : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:60px;">${p.emoji||'🌿'}</div>`;
+
+  const isWished = wishlist && wishlist.has(p.id);
+  const heartFill = isWished ? '#ef4444' : 'none';
+  const heartStroke = isWished ? '#ef4444' : 'currentColor';
+
+  // Variants from p.variants or default unit
+  const variantList = p.variants && p.variants.length
+    ? p.variants
+    : (p.unit ? [p.unit] : ['500g']);
+  const varPills = variantList.map((v,i) =>
+    `<span class="prod-variant-pill${i===0?' active':''}" onclick="event.stopPropagation();this.parentNode.querySelectorAll('.prod-variant-pill').forEach(x=>x.classList.remove('active'));this.classList.add('active');">${v}</span>`
+  ).join('');
+
+  return `<div class="prod-card" onclick="openProduct(${p.id||JSON.stringify(p)})">
+    <div class="prod-img">
+      ${img}
+      <button class="wish-btn${isWished?' active':''}" onclick="event.stopPropagation();toggleWish(${p.id||JSON.stringify(p)},this)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="${heartFill}" stroke="${heartStroke}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      </button>
+    </div>
+    <div class="prod-body">
+      <div class="prod-name">${p.name||p.title||'Product'}</div>
+      <div class="prod-price" style="margin-bottom:12px;">₹${p.price||p.admin_price||'—'} <span>/ ${variantList[0]||'unit'}</span></div>
+      <div class="prod-variants">${varPills}</div>
+      <button class="add-btn-full" onclick="event.stopPropagation();addToCart(${p.id||JSON.stringify(p)})">Add to cart</button>
+    </div>
+  </div>`;
 }
 
 // Legacy — kept so any existing call doesn't break
