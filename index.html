@@ -1376,6 +1376,31 @@ function applyHeroBanner(v) {
   if (urg) { if(v.urgency_text) urg.textContent = v.urgency_text; urg.style.display = v.urgency_show ? 'inline-flex':'none'; if(v.urg_color) urg.style.background=v.urg_color; }
   const hero = document.querySelector('.hero');
   if (hero && v.hero_height) hero.style.minHeight = v.hero_height;
+
+  // ── Button labels + redirect links ──────────────────────────
+  // The admin can optionally store btn1_link / btn2_link in the banner row.
+  // Format: an internal page id ("browse", "stores") OR a full URL (https://…)
+  // If blank, the original hardcoded onclick stays untouched.
+  function applyBtn(selector, label, link) {
+    const btn = document.querySelector(selector);
+    if (!btn) return;
+    if (label) btn.innerHTML = label;
+    if (link && link.trim()) {
+      btn.removeAttribute('onclick');
+      const isExternal = /^https?:\/\//i.test(link.trim());
+      btn.onclick = function() {
+        if (isExternal) {
+          window.open(link.trim(), '_blank', 'noopener');
+        } else {
+          var page = link.trim().replace(/^[#\/]/, '');
+          if (typeof showPage === 'function') showPage(page);
+          else window.location.href = link.trim();
+        }
+      };
+    }
+  }
+  applyBtn('.hero-btns .btn:first-child', v.btn1_text, v.btn1_link);
+  applyBtn('.hero-btns .btn:last-child',  v.btn2_text, v.btn2_link);
 }
 
 // ─── RENDER ───
