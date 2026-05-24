@@ -1431,7 +1431,7 @@ table td[style*="font-weight"]{font-family:'Playfair Display',serif !important;f
     <div class="form-row"><label>End Date</label><input type="date"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('promo-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="closeModal('promo-modal');showToast('Banner uploaded & scheduled!','green')">Upload & Schedule</button>
+      <button class="btn btn-primary" onclick="createBannerFromModal()">Upload & Schedule</button>
     </div>
   </div>
 </div>
@@ -1449,7 +1449,7 @@ table td[style*="font-weight"]{font-family:'Playfair Display',serif !important;f
     <div class="form-row"><label>Expiry Date</label><input type="date"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('coupon-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="closeModal('coupon-modal');showToast('Coupon created!','green')">Create Coupon</button>
+      <button class="btn btn-primary" onclick="createCouponDB()">Create Coupon</button>
     </div>
   </div>
 </div>
@@ -1457,8 +1457,14 @@ table td[style*="font-weight"]{font-family:'Playfair Display',serif !important;f
 <!-- ─── TOAST CONTAINER ─── -->
 <div class="toast" id="toast"></div>
 
+<!-- ─── SUPABASE ─── -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="organo-config.js"></script>
+
 <script>
-// ─── NAV ───
+// ═══════════════════════════════════════════════════════════════
+//  ORGANO ADMIN — Supabase-connected backend management
+// ═══════════════════════════════════════════════════════════════
 function showPage(id, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -1505,22 +1511,130 @@ if (chart) {
   });
 }
 
-// ─── PRODUCT ACTIONS ───
-function approveProduct(btn, name) {
-  const card = btn.closest('.approval-card');
+// ─── ADMIN STATE ───
+let pendingProducts = [];
+let allSellers      = [];
+let allOrders       = [];
+let currentAdminProductId = null;
+
+// ─── ADMIN INIT ───────────────────────────────────────────────
+async function adminInit() {
+  try {
+    // Auth check
+    const user = await Auth.getUser();
+    if (!user) { showToast('Please sign in as admin', 'warn'); return; }
+    const profile = await Auth.getProfile(user.id);
+    if (profile?.role !== 'admin') { showToast('Access denied — admin only', 'warn'); return; }
+
+    // Load data
+    await Promise.all([loadPendingProducts(), loadSellers(), loadOrders(), loadCouponsAdmin(), loadBanners()]);
+    updateDashboardStats();
+    showToast('Dashboard loaded', 'green');
+  } catch (err) {
+    console.warn('Admin init error (using demo data):', err.message);
+    showToast('Running in demo mode', 'info');
+  }
+}
+
+async function loadPendingProducts() {
+  const { data } = await Products.getPending();
+  pendingProducts = data || [];
+  // Update pending badge
+  const badge = document.querySelector('.nav-item[onclick*="products"] .nav-badge');
+  if (badge) badge.textContent = pendingProducts.length;
+  // Update approvals banner
+  const bannerH = document.querySelector('.approvals-banner h4');
+  if (bannerH) bannerH.textContent = `${pendingProducts.length} products awaiting your review`;
+  // Render approval cards if on that page
+  renderApprovalCards();
+}
+
+function renderApprovalCards() {
+  const grid = document.querySelector('#page-products .approval-grid');
+  if (!grid || !pendingProducts.length) return;
+  grid.innerHTML = pendingProducts.map(p => `
+    <div class="approval-card" data-id="${p.id}">
+      <div class="approval-img">
+        ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}">` : `<span>🌿</span>`}
+        <span class="approval-new-tag">NEW</span>
+      </div>
+      <div class="approval-body">
+        <h4>${p.name}</h4>
+        <div class="meta">${p.sellers?.store_name||'—'} · ${p.unit||'1 kg'} · ${p.category_slug||'—'}</div>
+        <div class="approval-status">
+          <span class="status-pill pending">⏳ Pending</span>
+          <span style="font-size:12px;color:var(--g500);">Seller asks: ₹${p.seller_price||'—'}</span>
+        </div>
+        <div class="price-input-row">
+          <input class="price-input" type="number" placeholder="Set selling price (₹)" id="sb-price-${p.id}">
+          <button class="btn btn-warn btn-sm" onclick="setPriceDB('${p.id}')">Set ₹</button>
+        </div>
+        <div class="approval-actions">
+          <button class="btn btn-green btn-sm" onclick="approveProductDB('${p.id}','${p.name.replace(/'/g,'')}')">✓ Approve</button>
+          <button class="btn btn-danger btn-sm" onclick="rejectProductDB('${p.id}')">✕ Reject</button>
+          <button class="btn btn-admin btn-sm" onclick="openPriceModal('${p.name.replace(/'/g,'')}','${p.id}')">₹ Set & Approve</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+async function approveProductDB(productId, name) {
+  const priceEl = document.getElementById('sb-price-' + productId);
+  const price = priceEl ? parseFloat(priceEl.value) : null;
+  const { error } = await Products.approve(productId, price);
+  if (error) { showToast('Error: ' + error.message, 'warn'); return; }
+  // Update card UI
+  const card = document.querySelector(`.approval-card[data-id="${productId}"]`);
   if (card) {
     const pill = card.querySelector('.status-pill');
     if (pill) { pill.className = 'status-pill approved'; pill.textContent = '✓ Approved'; }
   }
+  pendingProducts = pendingProducts.filter(p => p.id !== productId);
   showToast(name + ' approved and live!', 'green');
+  updateDashboardStats();
 }
-function rejectProduct(btn) {
-  const card = btn.closest('.approval-card');
+
+async function rejectProductDB(productId) {
+  const { error } = await Products.reject(productId);
+  if (error) { showToast('Error: ' + error.message, 'warn'); return; }
+  const card = document.querySelector(`.approval-card[data-id="${productId}"]`);
   if (card) {
     const pill = card.querySelector('.status-pill');
     if (pill) { pill.className = 'status-pill rejected'; pill.textContent = '✕ Rejected'; }
   }
+  pendingProducts = pendingProducts.filter(p => p.id !== productId);
   showToast('Product rejected. Seller notified.', 'warn');
+}
+
+async function setPriceDB(productId) {
+  const val = document.getElementById('sb-price-' + productId)?.value;
+  if (!val) { showToast('Please enter a price', 'warn'); return; }
+  await db.from('products').update({ admin_price: parseFloat(val) }).eq('id', productId);
+  showToast('Price ₹' + val + ' saved', 'info');
+  const pill = document.querySelector(`.approval-card[data-id="${productId}"] .status-pill`);
+  if (pill) { pill.className = 'status-pill priced'; pill.textContent = '₹ Price: ₹' + val; }
+}
+
+// Legacy wrappers (for static demo cards that still exist in HTML)
+function approveProduct(btn, name) {
+  const card = btn.closest('.approval-card');
+  if (card) {
+    const id = card.dataset.id;
+    if (id) { approveProductDB(id, name); return; }
+    const pill = card.querySelector('.status-pill');
+    if (pill) { pill.className = 'status-pill approved'; pill.textContent = '✓ Approved'; }
+  }
+  showToast(name + ' approved!', 'green');
+}
+function rejectProduct(btn) {
+  const card = btn.closest('.approval-card');
+  if (card) {
+    const id = card.dataset.id;
+    if (id) { rejectProductDB(id); return; }
+    const pill = card.querySelector('.status-pill');
+    if (pill) { pill.className = 'status-pill rejected'; pill.textContent = '✕ Rejected'; }
+  }
+  showToast('Product rejected.', 'warn');
 }
 function setPrice(idx) {
   const val = document.getElementById('price-' + idx)?.value;
@@ -1530,20 +1644,208 @@ function setPrice(idx) {
   showToast('Price set to ₹' + val, 'info');
 }
 
+async function loadSellers() {
+  const { data } = await Sellers.getAll('all');
+  allSellers = data || [];
+  // Update sellers table if visible
+  const tbody = document.querySelector('#page-sellers tbody');
+  if (!tbody || !allSellers.length) return;
+  tbody.innerHTML = allSellers.map(s => `
+    <tr>
+      <td><div class="seller-cell"><div class="s-mini-avatar">${(s.store_name||'S')[0]}</div><div><strong>${s.store_name}</strong><br><span style="font-size:11.5px;color:var(--g500);">${s.profiles?.full_name||'—'}</span></div></div></td>
+      <td>${s.category||'—'}</td>
+      <td>${s.location||'—'}</td>
+      <td><span class="status-pill ${s.status==='approved'?'approved':s.status==='suspended'?'suspended':'pending'}">${s.status||'pending'}</span></td>
+      <td>⭐ ${s.rating||'—'}</td>
+      <td>
+        <div class="action-btns">
+          ${s.status!=='approved' ? `<button class="icon-btn approve" onclick="approveSeller('${s.id}')" title="Approve">✓</button>` : ''}
+          <button class="icon-btn reject" onclick="suspendSeller('${s.id}')" title="Suspend">⊘</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+async function approveSeller(sellerId) {
+  await Sellers.approve(sellerId);
+  showToast('Seller approved!', 'green');
+  loadSellers();
+}
+async function suspendSeller(sellerId) {
+  await Sellers.suspend(sellerId);
+  showToast('Seller suspended', 'warn');
+  loadSellers();
+}
+
+async function loadOrders() {
+  const { data } = await Orders.getAll();
+  allOrders = data || [];
+  // Update orders table
+  const tbody = document.querySelector('#page-orders tbody');
+  if (!tbody || !allOrders.length) return;
+  const statusClass = { placed:'pending', confirmed:'pending', packed:'active', transit:'active', delivered:'approved', cancelled:'rejected' };
+  tbody.innerHTML = allOrders.slice(0,20).map(o => `
+    <tr>
+      <td>#${o.order_number||o.id.slice(0,8).toUpperCase()}</td>
+      <td>${o.profiles?.full_name||'—'}</td>
+      <td>${(o.items||[]).length} item(s)</td>
+      <td>₹${o.total_amount}</td>
+      <td><span class="status-pill ${statusClass[o.status]||'pending'}">${o.status||'placed'}</span></td>
+      <td>${new Date(o.created_at).toLocaleDateString('en-IN')}</td>
+      <td>
+        <select onchange="updateOrderStatus('${o.id}',this.value)" style="font-size:12px;border:1px solid var(--g200);border-radius:6px;padding:4px 8px;">
+          <option value="">Update</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="packed">Packed</option>
+          <option value="transit">In Transit</option>
+          <option value="delivered">Delivered</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </td>
+    </tr>`).join('');
+  updateDashboardStats();
+}
+
+async function updateOrderStatus(orderId, status) {
+  if (!status) return;
+  await Orders.updateStatus(orderId, status);
+  showToast('Order status updated to ' + status, 'green');
+  loadOrders();
+}
+
+async function loadCouponsAdmin() {
+  const coupons = await Coupons.getAll();
+  const tbody = document.querySelector('#page-coupons tbody');
+  if (!tbody || !coupons.length) return;
+  tbody.innerHTML = coupons.map(c => `
+    <tr>
+      <td><strong>${c.code}</strong></td>
+      <td>${c.discount_type === 'percentage' ? c.discount_value + '%' : '₹' + c.discount_value}</td>
+      <td>₹${c.min_order||0}</td>
+      <td>${c.used_count||0} / ${c.max_uses||100}</td>
+      <td>${c.expires_at ? new Date(c.expires_at).toLocaleDateString('en-IN') : '—'}</td>
+      <td><span class="status-pill ${c.is_active?'approved':'suspended'}">${c.is_active?'Active':'Inactive'}</span></td>
+      <td><button class="icon-btn" onclick="deleteCoupon('${c.id}')">🗑</button></td>
+    </tr>`).join('');
+}
+
+async function deleteCoupon(id) {
+  await db.from('coupons').update({ is_active: false }).eq('id', id);
+  showToast('Coupon deactivated', 'warn');
+  loadCouponsAdmin();
+}
+
+async function loadBanners() {
+  const banners = await Banners.getAll();
+  const list = document.getElementById('bannerCardsList');
+  if (!list) return;
+  if (!banners.length) {
+    list.innerHTML = '<p style="color:var(--g500);font-size:14px;">No banners yet — create one below.</p>';
+    return;
+  }
+  list.innerHTML = banners.map(b => `
+    <div style="display:flex;align-items:center;gap:16px;padding:16px;background:#fff;border-radius:var(--r);border:1.5px solid var(--g200);">
+      <div style="width:120px;height:60px;border-radius:var(--rs);overflow:hidden;background:var(--g100);flex-shrink:0;">
+        ${b.bg_url ? `<img src="${b.bg_url}" style="width:100%;height:100%;object-fit:cover;">` : '<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:24px;">🖼️</div>'}
+      </div>
+      <div style="flex:1;">
+        <strong style="font-size:14px;">${b.title||'Banner'}</strong>
+        <div style="font-size:12px;color:var(--g500);margin-top:2px;">${b.headline||'—'}</div>
+      </div>
+      <span class="status-pill ${b.status==='live'?'approved':b.status==='scheduled'?'pending':'suspended'}">${b.status}</span>
+      <div style="display:flex;gap:6px;">
+        ${b.status!=='live' ? `<button class="btn btn-green btn-sm" onclick="publishBannerDB('${b.id}')">Publish</button>` : `<button class="btn btn-warn btn-sm" onclick="unpublishBannerDB('${b.id}')">Unpublish</button>`}
+        <button class="btn btn-danger btn-sm" onclick="deleteBannerDB('${b.id}')">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+async function publishBannerDB(id) {
+  await Banners.publish(id);
+  showToast('Banner is now live!', 'green');
+  loadBanners();
+}
+async function unpublishBannerDB(id) {
+  await Banners.unpublish(id);
+  showToast('Banner unpublished', 'info');
+  loadBanners();
+}
+async function deleteBannerDB(id) {
+  await db.from('hero_banners').delete().eq('id', id);
+  showToast('Banner deleted', 'warn');
+  loadBanners();
+}
+
+function updateDashboardStats() {
+  const statCards = document.querySelectorAll('.stat-val');
+  if (statCards.length >= 4) {
+    const revenue = allOrders.filter(o=>o.status==='delivered').reduce((s,o)=>s+Number(o.total_amount||0),0);
+    statCards[0].textContent = '₹' + (revenue/1000).toFixed(0) + 'K';
+    statCards[1].textContent = allOrders.length;
+    statCards[2].textContent = allSellers.filter(s=>s.status==='approved').length;
+    statCards[3].textContent = pendingProducts.length;
+  }
+}
+
 // ─── MODALS ───
-function openPriceModal(name) {
+function openPriceModal(name, productId) {
+  currentAdminProductId = productId;
   document.getElementById('modal-product-name').textContent = 'Set the admin-approved selling price for: ' + name;
   document.getElementById('price-modal').classList.add('open');
 }
 function openPromoModal() { document.getElementById('promo-modal').classList.add('open'); }
 function openCouponModal() { document.getElementById('coupon-modal').classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-function savePriceAndApprove() {
-  const p = document.getElementById('modal-price-input').value;
+
+async function savePriceAndApprove() {
+  const price = parseFloat(document.getElementById('modal-price-input').value);
+  const featured = document.querySelector('#price-modal select')?.value?.includes('Yes');
+  const notes = document.querySelector('#price-modal textarea')?.value || '';
   closeModal('price-modal');
-  if (p) showToast('Price ₹' + p + ' set & product approved!', 'green');
-  else showToast('Price saved and product approved!', 'green');
+  if (!price) { showToast('Enter a price', 'warn'); return; }
+  if (currentAdminProductId) {
+    await Products.approve(currentAdminProductId, price, featured, notes);
+    pendingProducts = pendingProducts.filter(p => p.id !== currentAdminProductId);
+    const card = document.querySelector(`.approval-card[data-id="${currentAdminProductId}"]`);
+    if (card) { const pill = card.querySelector('.status-pill'); if(pill){ pill.className='status-pill approved'; pill.textContent='✓ Approved'; } }
+    showToast('Price ₹' + price + ' set & product approved!', 'green');
+    currentAdminProductId = null;
+  } else {
+    showToast('Price set!', 'green');
+  }
 }
+
+async function createCouponDB() {
+  const modal = document.getElementById('coupon-modal');
+  const inputs = modal.querySelectorAll('input, select');
+  const code       = inputs[0]?.value?.toUpperCase()?.trim();
+  const dtype      = inputs[1]?.value?.includes('Percentage') ? 'percentage' : 'fixed';
+  const dvalue     = parseFloat(inputs[2]?.value);
+  const minOrder   = parseFloat(inputs[3]?.value) || 0;
+  const maxUses    = parseInt(inputs[4]?.value) || 100;
+  const expiresAt  = inputs[5]?.value;
+  if (!code || !dvalue) { showToast('Fill in code and discount value', 'warn'); return; }
+  const { error } = await Coupons.create({ code, discount_type: dtype, discount_value: dvalue, min_order: minOrder, max_uses: maxUses, expires_at: expiresAt || null });
+  closeModal('coupon-modal');
+  if (error) { showToast('Error: ' + error.message, 'warn'); return; }
+  showToast('Coupon ' + code + ' created!', 'green');
+  loadCouponsAdmin();
+}
+
+async function createBannerFromModal() {
+  const modal = document.getElementById('promo-modal');
+  const inputs = modal.querySelectorAll('input, select');
+  const title     = inputs[0]?.value;
+  const bg_url    = inputs[1]?.value;
+  const status    = inputs[2]?.value?.includes('Hero') ? 'draft' : 'draft';
+  if (!title) { showToast('Enter a campaign title', 'warn'); return; }
+  const { error } = await Banners.save({ title, bg_url, status });
+  closeModal('promo-modal');
+  if (error) { showToast('Error: ' + error.message, 'warn'); return; }
+  showToast('Banner created!', 'green');
+  loadBanners();
+}
+
 document.querySelectorAll('.modal-overlay').forEach(o => {
   o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
 });
@@ -1727,14 +2029,41 @@ function updatePreview() {
   }
 }
 
-function publishHeroBanner() {
+async function publishHeroBanner() {
   const v = getEditorValues();
+  // Check if there's a current banner being edited
+  const existingId = document.getElementById('heroBannerPreview')?.dataset?.bannerId;
+  const bannerRecord = {
+    title:        v.headline?.slice(0,40) || 'Hero Banner',
+    headline:     v.headline,
+    highlight:    v.highlight,
+    sub_text:     v.sub,
+    urgency_text: v.urgency,
+    urgency_show: v.urgencyShow,
+    btn1_text:    v.btn1,
+    btn2_text:    v.btn2,
+    bg_url:       v.bgurl,
+    overlay:      v.overlay,
+    hl_color:     v.hlcolor,
+    urg_color:    v.urgcolor,
+    hero_height:  v.height,
+    status:       'live',
+    sort_order:   0
+  };
+  if (existingId) bannerRecord.id = existingId;
+
   try {
-    localStorage.setItem(HERO_KEY, JSON.stringify(v));
-  } catch(e) {}
-  const s = document.getElementById('saveStatus');
-  if (s) { s.style.display = 'block'; setTimeout(() => s.style.display = 'none', 4000); }
-  showToast('Hero banner published to storefront! ✨', 'green');
+    const { error } = await Banners.save(bannerRecord);
+    if (error) throw error;
+    showToast('Hero banner published to storefront! ✨', 'green');
+    const s = document.getElementById('saveStatus');
+    if (s) { s.style.display = 'block'; setTimeout(() => s.style.display = 'none', 4000); }
+    loadBanners();
+  } catch (err) {
+    // Fallback to localStorage for demo
+    try { localStorage.setItem(HERO_KEY, JSON.stringify(v)); } catch(e) {}
+    showToast('Banner saved locally (connect Supabase to sync) ✨', 'info');
+  }
 }
 
 function resetHeroBanner() {
@@ -1769,8 +2098,15 @@ function applyTheme(theme) {
 // init preview on page load
 updatePreview();
 
-// Show initial toast
-setTimeout(() => showToast('12 products awaiting your approval', 'warn'), 800);
+// ─── START ───
+adminInit().then(() => {
+  setTimeout(() => {
+    if (pendingProducts.length > 0)
+      showToast(`${pendingProducts.length} products awaiting approval`, 'warn');
+  }, 800);
+}).catch(() => {
+  setTimeout(() => showToast('Running in demo mode — configure Supabase to connect', 'info'), 800);
+});
 </script>
 </body>
 </html>
